@@ -1,0 +1,49 @@
+# Environment files
+.env
+.env.*
+!config.env
+
+# Data directories
+ROMA_checkpoints/
+ollama-data/
+huggingface-cache/
+**/data/uploads/
+**/data/outputs/
+**/data/test_images/
+**/afbeeldingen/
+shared/
+
+# Python
+__pycache__/
+*.py[cod]
+*.class
+.Python
+.env/
+.venv/
+venv/
+ENV/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+log/
+
+# System
+.DS_Store
+Thumbs.db
+
+# Docker
+.docker/
+docker-compose.override.yml

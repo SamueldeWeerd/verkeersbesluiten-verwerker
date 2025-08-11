@@ -1,0 +1,1193 @@
+{
+  "name": "traffic_decree_processor_workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "8d54aee3-ac7a-4bb7-b542-08267e96defb",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -1940,
+        680
+      ],
+      "id": "c29bf6f6-496e-4c4a-a564-ab87f3a7789b",
+      "name": "Webhook",
+      "webhookId": "8d54aee3-ac7a-4bb7-b542-08267e96defb"
+    },
+    {
+      "parameters": {
+        "model": "qwen2.5:3b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        640,
+        800
+      ],
+      "id": "dc21339f-3df3-4751-b31b-26d0c695890c",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "as7MC5mZGvinblbT",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=http://koop-api-service:8000/besluiten/{{$json.date }}/{{ $json.date }}?{{ $json.query }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -520,
+        680
+      ],
+      "id": "b7eb9aeb-cffb-47bb-963d-a391c15fc58d",
+      "name": "HTTP Request",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -180,
+        660
+      ],
+      "id": "62d9855f-c4f4-4935-b96b-a7c8a1cbf8c0",
+      "name": "Loop Over Items",
+      "retryOnFail": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"samenvatting\": {\n      \"type\": \"string\",\n      \"description\": \"Samenvatting van het verkeersbesluit in maximaal drie zinnen.\"\n    }\n  },\n  \"required\": [\"samenvatting\"]\n}",
+        "options": {
+          "systemPromptTemplate": "=KRITISCH: Antwoord ALLEEN met een JSON object. GEBRUIK GEEN markdown, GEEN '```' codeblokken, GEEN uitleg.\n\nTaak: Maak een Nederlandse samenvatting van de verkeerstekst in maximaal drie zinnen.\n\nStart je antwoord direct met gekrulde haakjes van een json formatting, geen enkele andere leestekens toevoegen.",
+          "batching": {}
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        660
+      ],
+      "id": "f07b57dc-e8b9-46a5-a6df-51d6888355f8",
+      "name": "Information Extractor",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://feature-matching-api:8000/cutout-and-match-with-url",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "geometry",
+              "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json.geometrie }}"
+            },
+            {
+              "name": "map_type",
+              "value": "={{ $json['map-type'] }}"
+            },
+            {
+              "name": "output_format",
+              "value": "json"
+            },
+            {
+              "name": "image_url",
+              "value": "={{ $('check if besluit has images').item.json.images[0].replace('localhost:8001', 'koop-api-service:8000') }}"
+            },
+            {
+              "name": "traffic_decree_id",
+              "value": "={{ $('HTTP Request').item.json.id }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 3000000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3180,
+        120
+      ],
+      "id": "75be8ed2-b924-48d0-bf21-b689b0f2509c",
+      "name": "HTTP Request to Feature Matching Model",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4ed06e25-0a74-4c7e-a770-ed823c55c0fe",
+              "leftValue": "={{ $json['map-type'] }}",
+              "rightValue": "geen kaart gevonden",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            },
+            {
+              "id": "3e774162-7c84-4900-8269-151f2889ba49",
+              "leftValue": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json.geometrie }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2c78972f-6647-44a0-a3a1-ff58bdaa2dc3",
+              "leftValue": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json.geometrie }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2720,
+        240
+      ],
+      "id": "a815a640-bed0-430e-b28a-5e24460485e0",
+      "name": "if image is a map"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "6141dbdd-7b07-48e4-b377-31864da388fa",
+              "leftValue": "={{ $json.images[0] }}",
+              "rightValue": "bijlage",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1500,
+        540
+      ],
+      "id": "2a3398e2-c621-4d90-8794-2f4f62c8dc62",
+      "name": "if PDF"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = JSON.parse($input.first().json.content);\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2460,
+        180
+      ],
+      "id": "f60301bd-55e2-49c6-a67a-c8e3ea945a36",
+      "name": "format output1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "885d6786-5634-4183-a85d-a1d66746a85f",
+              "leftValue": "={{ $json.images }}",
+              "rightValue": "",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1220,
+        660
+      ],
+      "id": "5d14505f-02c3-4a73-9bf0-208287961f04",
+      "name": "check if besluit has images"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3e2a18f-2341-44bd-9b29-4c7df3bd887b",
+              "name": "id",
+              "value": "={{ $('HTTP Request').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "edab0384-2aba-4f70-8341-5def045738e3",
+              "name": "gemeente",
+              "value": "={{ $('HTTP Request').item.json.metadata['DC.creator'] }}",
+              "type": "string"
+            },
+            {
+              "id": "23f59378-3393-4a59-9cd8-61479a85af85",
+              "name": "titel",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.alternative'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
+              "name": "samenvatting",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.abstract'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a47421ee-e599-4526-953e-438f07e60e90",
+              "name": "AI-samenvatting",
+              "value": "={{ $json.output.samenvatting }}",
+              "type": "string"
+            },
+            {
+              "id": "ce8d8769-c65a-4fde-a451-ab3cd1806f1d",
+              "name": "datum",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.available'] }}",
+              "type": "string"
+            },
+            {
+              "id": "b38ee769-8c51-4c08-9cf6-62a3d2e21cd7",
+              "name": "geometrie",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.gebiedsmarkering'][0].geometrie }}",
+              "type": "string"
+            },
+            {
+              "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
+              "name": "images",
+              "value": "={{ $('HTTP Request').item.json.images }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        660
+      ],
+      "id": "427b32fe-e86c-437a-9c5e-063f4abaf312",
+      "name": "set up relevant fields, including 'AI Summary'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1d9d8923-d02e-4650-b75d-c6edf11c2fb4",
+              "name": "id",
+              "value": "={{ $('Loop Over Items').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "f1ae4c73-6a1d-4d46-bad8-8ff7730b8031",
+              "name": "gemeente",
+              "value": "={{ $('Loop Over Items').item.json.gemeente }}",
+              "type": "string"
+            },
+            {
+              "id": "67311ee6-537b-470b-9ae5-831a76d78f09",
+              "name": "titel",
+              "value": "={{ $('Loop Over Items').item.json.titel }}",
+              "type": "string"
+            },
+            {
+              "id": "edbc5512-197e-476d-90fb-4bc6453497c8",
+              "name": "samenvatting",
+              "value": "={{ $('Loop Over Items').item.json.samenvatting }}",
+              "type": "string"
+            },
+            {
+              "id": "1629d459-d88e-46cd-8afe-cbd643f77a53",
+              "name": "ai-samenvatting",
+              "value": "={{ $('Loop Over Items').item.json['AI-samenvatting'] }}",
+              "type": "string"
+            },
+            {
+              "id": "795f64db-2aad-4a76-8eb4-c68c5d8f7966",
+              "name": "beschikbaar",
+              "value": "={{ $('Loop Over Items').item.json.datum }}",
+              "type": "string"
+            },
+            {
+              "id": "81b54562-cead-429e-a821-e71b9f63d350",
+              "name": "original-image",
+              "value": "={{ $('Loop Over Items').item.json.image }}",
+              "type": "string"
+            },
+            {
+              "id": "5d034376-2169-4f43-9122-6af819941563",
+              "name": "geotiff-url",
+              "value": "={{ $('Loop Over Items').item.json['warped-georeferenced-geotiff-url'] }}",
+              "type": "string"
+            },
+            {
+              "id": "19bd369d-7041-4890-8d26-63a6c96d492b",
+              "name": "geom_multipoint",
+              "value": "={{ $('Loop Over Items').item.json.geometrie.includes('POINT') ? $('Loop Over Items').item.json.geometrie : null }}",
+              "type": "string"
+            },
+            {
+              "id": "67bfd039-4ddf-4a50-a11b-20bcb8289bbd",
+              "name": "geom_multilinestring",
+              "value": "={{ $('Loop Over Items').item.json.geometrie?.includes('LINE') ? $('Loop Over Items').item.json.geometrie : null }}",
+              "type": "string"
+            },
+            {
+              "id": "043c9d86-2373-410e-b481-504ec032508f",
+              "name": "geom_multipolygon",
+              "value": "={{ $('Loop Over Items').item.json.geometrie?.includes('POLYGON') ? $('Loop Over Items').item.json.geometrie : null }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        260,
+        220
+      ],
+      "id": "950cbece-dfb0-43e0-b59b-a084ac8b1cbd",
+      "name": "extract relevant fields"
+    },
+    {
+      "parameters": {
+        "binaryPropertyName": "={{ $json.datum }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2621ae6f-f0c4-490b-9c32-1f9e108aca74",
+      "name": "convert to csv"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO verkeersbesluiten.verkeersai (\n  id,\n  gemeente,\n  titel,\n  samenvatting,\n  ai_samenvatting,\n  available,\n  original_image,\n  PATH,\n  geom_multipolygon,\n  geom_multilinestring,\n  geom_multipoint\n)\nVALUES (\n  '{{ $json.id }}',\n  '{{ $json.gemeente }}',\n  '{{ $json.titel }}',\n  '{{ $json.samenvatting }}',\n  '{{ $json['ai-samenvatting'] }}',\n  '{{ $json.beschikbaar }}',\n  '{{ $json['original-image'] }}',\n  '{{ $json['geotiff-url'] }}',\n  {{ $json.geom_multipolygon ? `ST_GeomFromText('${$json.geom_multipolygon}', 28992)` : 'NULL' }},\n  {{ $json.geom_multilinestring ? `ST_GeomFromText('${$json.geom_multilinestring}', 28992)` : 'NULL' }},\n  {{ $json.geom_multipoint ? `ST_GeomFromText('${$json.geom_multipoint}', 28992)` : 'NULL' }}\n)\nON CONFLICT (id) DO UPDATE SET\n  gemeente = EXCLUDED.gemeente,\n  titel = EXCLUDED.titel,\n  samenvatting = EXCLUDED.samenvatting,\n  ai_samenvatting = EXCLUDED.ai_samenvatting,\n  available = EXCLUDED.available,\n  original_image = EXCLUDED.original_image,\n  PATH = EXCLUDED.PATH,\n  geom_multipolygon = EXCLUDED.geom_multipolygon,\n  geom_multilinestring = EXCLUDED.geom_multilinestring,\n  geom_multipoint = EXCLUDED.geom_multipoint;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        880,
+        140
+      ],
+      "id": "db5c8565-4598-415f-ae42-28e5639303ba",
+      "name": "populate table in postgresdatabase",
+      "credentials": {
+        "postgres": {
+          "id": "n3pADQv8ygSSYJKK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        560,
+        140
+      ],
+      "id": "c24a789d-2d96-4e2f-9d73-5f3af1600265",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.images[0].replace('localhost', 'koop-api-service').replace('8001', '8000') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1660,
+        0
+      ],
+      "id": "8766d5eb-0bcd-4cdf-ad58-7ad8ecb97a54",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "Analyseer de achtergrondkaart in deze afbeelding. Kies uit bijgevoegde map-types of kies voor \"geen kaart gevonden\" als de afbeelding geen kaart bevat. Geef de output in JSON formaat met enkel het map-type en verder geen enkel attribuut. Als de kaart erg uitgezoomd is en daarom een groot gebied bestrijkt, meer dan ongeveer 500 bij 500 meter, kies dan enkel tussen osm, luchtfoto en brt kaarttypen. \n\nGeef alleen een geldig JSON-object terug, zonder uitleg, zonder markdown, zonder codeblokken en zonder geëscapete tekens zoals \\n. Hier is het JSON-schema:\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"map-type\": {\n      \"type\": \"string\",\n      \"description\": \"Het type kaart, of \"geen kaart gevonden\" als de afbeelding geen kaart bevat.\"\n    }\n  },\n  \"required\": [\"map-type\"],\n  \"additionalProperties\": false\n}\n\n\n    - osm: OpenStreetMap standard tiles\n    - bgt-achtergrond: Dutch BGT background\n    - bgt-omtrek: Dutch BGT outline\n    - bgt-standaard: Dutch BGT standard\n    - luchtfoto: Dutch aerial photography\n    - brta: BRT-A standard topographic map\n    - brta-omtrek: BRT-A outline topographic\n    - top10: BRT-TOP10 NL topographic map\n    - bag: BAG buildings layer\n\n\n",
+        "inputType": "base64",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2320,
+        0
+      ],
+      "id": "dbdfb9e3-8481-4412-a6b8-c69306461149",
+      "name": "Analyze image from binary file",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "Nd1zFBC3SzVaH0Gx",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "chatgpt-4o-latest",
+          "mode": "list",
+          "cachedResultName": "CHATGPT-4O-LATEST"
+        },
+        "text": "Analyseer de achtergrondkaart in deze afbeelding. Kies uit bijgevoegde map-types of kies voor \"geen kaart gevonden\" als de afbeelding geen kaart bevat. Geef de output in JSON formaat met enkel het map-type en verder geen enkel attribuut.\n\nGeef alleen een geldig JSON-object terug, zonder uitleg, zonder markdown, zonder codeblokken en zonder geëscapete tekens zoals \\n. Hier is het JSON-schema:\n{\n  \"type\": \"object\",\n  \"properties\": {\n    \"map-type\": {\n      \"type\": \"string\",\n      \"description\": \"Het type kaart, of \"geen kaart gevonden\" als de afbeelding geen kaart bevat.\"\n    }\n  },\n  \"required\": [\"map-type\"],\n  \"additionalProperties\": false\n}\n\n\n    - osm: OpenStreetMap standard tiles\n    - bgt-achtergrond: Dutch BGT background\n    - bgt-omtrek: Dutch BGT outline\n    - bgt-standaard: Dutch BGT standard\n    - luchtfoto: Dutch aerial photography\n    - brta: BRT-A standard topographic map\n    - brta-omtrek: BRT-A outline topographic\n    - top10: BRT-TOP10 NL topographic map\n    - bag: BAG buildings layer\n    - bgt-bg-bag: BGT background with BAG\n    - bgt-bg-omtrek: BGT background with outline overlay\n    - brta-bag: BRT-A with BAG buildings overlay\n    - brta-omtrek: BRT-A with BGT outline overlay \n\n\n",
+        "imageUrls": "={{ $json.images[0] }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        2100,
+        200
+      ],
+      "id": "f9146dd0-0585-42e7-b97b-9a32179a04c4",
+      "name": "Analyze image from url",
+      "retryOnFail": true,
+      "credentials": {
+        "openAiApi": {
+          "id": "Nd1zFBC3SzVaH0Gx",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE EXTENSION IF NOT EXISTS postgis;\n\nCREATE SCHEMA IF NOT EXISTS verkeersbesluiten;\n\nDO $$\nBEGIN\n    IF NOT EXISTS (\n        SELECT FROM information_schema.tables \n        WHERE  table_schema = 'verkeersbesluiten'\n        AND    table_name   = 'verkeersai'\n    ) THEN\n        EXECUTE $stmt$\n            CREATE TABLE verkeersbesluiten.verkeersai (\n                id text PRIMARY KEY,\n                gemeente text,\n                titel text,\n                samenvatting text,\n                ai_samenvatting text,\n                available date,\n                original_image text,\n                PATH text,\n                geom_multipolygon geometry(MULTIPOLYGON),\n                geom_multilinestring geometry(MULTILINESTRING),\n                geom_multipoint geometry(MULTIPOINT, 28992)\n            );\n        $stmt$;\n\n        -- Create indexes\n        EXECUTE 'CREATE INDEX idx_geom_multilinestring ON verkeersbesluiten.verkeersai USING gist (geom_multilinestring)';\n        EXECUTE 'CREATE INDEX idx_geom_multipoint ON verkeersbesluiten.verkeersai USING gist (geom_multipoint)';\n        EXECUTE 'CREATE INDEX idx_geom_multipolygon ON verkeersbesluiten.verkeersai USING gist (geom_multipolygon)';\n    END IF;\nEND\n$$;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        80,
+        480
+      ],
+      "id": "c454916e-3e62-48be-9c23-4604504573e6",
+      "name": "create table in postgresdatabase",
+      "credentials": {
+        "postgres": {
+          "id": "n3pADQv8ygSSYJKK",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "metadata['OVERHEIDop.gebiedsmarkering']",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1500,
+        200
+      ],
+      "id": "2e1a1667-63d0-4fcd-9b8c-2c71c4c3d73c",
+      "name": "Split Out for geometry"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3e2a18f-2341-44bd-9b29-4c7df3bd887b",
+              "name": "id",
+              "value": "={{ $('HTTP Request').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "edab0384-2aba-4f70-8341-5def045738e3",
+              "name": "gemeente",
+              "value": "={{ $('HTTP Request').item.json.metadata['DC.creator'] }}",
+              "type": "string"
+            },
+            {
+              "id": "23f59378-3393-4a59-9cd8-61479a85af85",
+              "name": "titel",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.alternative'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
+              "name": "samenvatting",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.abstract'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a47421ee-e599-4526-953e-438f07e60e90",
+              "name": "AI-samenvatting",
+              "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json['AI-samenvatting'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ce8d8769-c65a-4fde-a451-ab3cd1806f1d",
+              "name": "datum",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.available'] }}",
+              "type": "string"
+            },
+            {
+              "id": "b38ee769-8c51-4c08-9cf6-62a3d2e21cd7",
+              "name": "geometrie",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.gebiedsmarkering'][0].geometrie }}",
+              "type": "string"
+            },
+            {
+              "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
+              "name": "image",
+              "value": "={{ $('HTTP Request1').item.json.images[0].includes('pdf') ? 'http://koop-api-service:8000' + $('HTTP Request1').item.json.images[0] : $('HTTP Request1').item.json.images[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "9ecdba8b-537f-4740-8a43-d503a0c625f8",
+              "name": "map-type",
+              "value": "={{ $('format output1').item.json['map-type'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c494b08b-17b0-4b9f-b967-3e8523930d13",
+              "name": "warped-georeferenced-geotiff-url",
+              "value": "={{ 'http://localhost:8005' + $json.georeferenced_files[0].url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        4080,
+        300
+      ],
+      "id": "3d2e9c4f-6ca6-4f60-b931-5faf87eb922c",
+      "name": "set up final fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "images",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -1240,
+        200
+      ],
+      "id": "6c767066-937e-4b8f-8369-27ab1d43c334",
+      "name": "split out for images"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3e2a18f-2341-44bd-9b29-4c7df3bd887b",
+              "name": "id",
+              "value": "={{ $('HTTP Request').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "edab0384-2aba-4f70-8341-5def045738e3",
+              "name": "gemeente",
+              "value": "={{ $('HTTP Request').item.json.metadata['DC.creator'] }}",
+              "type": "string"
+            },
+            {
+              "id": "23f59378-3393-4a59-9cd8-61479a85af85",
+              "name": "titel",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.alternative'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
+              "name": "samenvatting",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.abstract'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a47421ee-e599-4526-953e-438f07e60e90",
+              "name": "AI-samenvatting",
+              "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json['AI-samenvatting'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ce8d8769-c65a-4fde-a451-ab3cd1806f1d",
+              "name": "datum",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.available'] }}",
+              "type": "string"
+            },
+            {
+              "id": "b38ee769-8c51-4c08-9cf6-62a3d2e21cd7",
+              "name": "geometrie",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.gebiedsmarkering'][0].geometrie }}",
+              "type": "string"
+            },
+            {
+              "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
+              "name": "image",
+              "value": "=null",
+              "type": "string"
+            },
+            {
+              "id": "9ecdba8b-537f-4740-8a43-d503a0c625f8",
+              "name": "map-type",
+              "value": "=null",
+              "type": "string"
+            },
+            {
+              "id": "c494b08b-17b0-4b9f-b967-3e8523930d13",
+              "name": "warped-georeferenced-geotiff-url",
+              "value": "=null",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1980,
+        680
+      ],
+      "id": "5718d64e-ad30-47f9-bdc1-ba866189a4cc",
+      "name": "set up final fields1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3e2a18f-2341-44bd-9b29-4c7df3bd887b",
+              "name": "id",
+              "value": "={{ $('HTTP Request').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "edab0384-2aba-4f70-8341-5def045738e3",
+              "name": "gemeente",
+              "value": "={{ $('HTTP Request').item.json.metadata['DC.creator'] }}",
+              "type": "string"
+            },
+            {
+              "id": "23f59378-3393-4a59-9cd8-61479a85af85",
+              "name": "titel",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.alternative'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
+              "name": "samenvatting",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.abstract'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a47421ee-e599-4526-953e-438f07e60e90",
+              "name": "AI-samenvatting",
+              "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json['AI-samenvatting'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ce8d8769-c65a-4fde-a451-ab3cd1806f1d",
+              "name": "datum",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.available'] }}",
+              "type": "string"
+            },
+            {
+              "id": "b38ee769-8c51-4c08-9cf6-62a3d2e21cd7",
+              "name": "geometrie",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.gebiedsmarkering'][0].geometrie }}",
+              "type": "string"
+            },
+            {
+              "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
+              "name": "image",
+              "value": "={{ $json.images[0] }}",
+              "type": "string"
+            },
+            {
+              "id": "9ecdba8b-537f-4740-8a43-d503a0c625f8",
+              "name": "map-type",
+              "value": "={{ $('format output1')?.item?.json?.['map-type'] ?? null }}",
+              "type": "string"
+            },
+            {
+              "id": "c494b08b-17b0-4b9f-b967-3e8523930d13",
+              "name": "warped-georeferenced-geotiff-url",
+              "value": "=null",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2980,
+        260
+      ],
+      "id": "77642e7e-6ea3-4b4a-a8b1-2eab467f42dd",
+      "name": "set up final fields2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json.body;\n\nconst startDate = new Date(input.start_date);\nconst endDate = new Date(input.end_date);\n\nconst bordcodes = input.bordcode_categories || null;\nconst provinces = input.provinces || null;\nconst gemeenten = input.gemeenten || null;\n\n// Helper to build query string from optional arrays\nfunction toQueryParam(key, value) {\n  if (!value || !Array.isArray(value) || value.length === 0) return null;\n  return `${encodeURIComponent(key)}=${encodeURIComponent(value.join(','))}`;\n}\n\nconst result = [];\n\nfor (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {\n  const dateStr = d.toISOString().split('T')[0];\n\n  const queryParts = [];\n\n  const bordParam = toQueryParam('bordcode_categories', bordcodes);\n  const provParam = toQueryParam('provinces', provinces);\n  const gemParam = toQueryParam('gemeenten', gemeenten);\n\n  if (bordParam) queryParts.push(bordParam);\n  if (provParam) queryParts.push(provParam);\n  if (gemParam) queryParts.push(gemParam);\n\n  const queryString = queryParts.join('&');\n\n  result.push({\n    json: {\n      date: dateStr,\n      query: queryString,\n    }\n  });\n}\n\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1540,
+        680
+      ],
+      "id": "e08bbd39-41d3-44cc-9845-c3bec4183287",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -940,
+        680
+      ],
+      "id": "6450c616-d6bd-4b71-92f8-cb1f0318d04d",
+      "name": "Loop over days",
+      "retryOnFail": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "width": 1000,
+        "height": 1000,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        1880,
+        0
+      ],
+      "id": "3dd760bb-0ee7-4f71-ac3f-be39807a680c",
+      "name": "Edit Image"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "convert to csv",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "create table in postgresdatabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop over days",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "set up relevant fields, including 'AI Summary'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request to Feature Matching Model": {
+      "main": [
+        [
+          {
+            "node": "set up final fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if image is a map": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request to Feature Matching Model",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "set up final fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if PDF": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Analyze image from url",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "format output1": {
+      "main": [
+        [
+          {
+            "node": "if image is a map",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check if besluit has images": {
+      "main": [
+        [
+          {
+            "node": "if PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "set up final fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set up relevant fields, including 'AI Summary'": {
+      "main": [
+        [
+          {
+            "node": "check if besluit has images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract relevant fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "populate table in postgresdatabase": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "populate table in postgresdatabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image from binary file": {
+      "main": [
+        [
+          {
+            "node": "format output1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze image from url": {
+      "main": [
+        [
+          {
+            "node": "format output1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out for geometry": {
+      "main": [
+        [
+          {
+            "node": "split out for images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set up final fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set up final fields1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set up final fields2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Loop over days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over days": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image": {
+      "main": [
+        [
+          {
+            "node": "Analyze image from binary file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create table in postgresdatabase": {
+      "main": [
+        [
+          {
+            "node": "extract relevant fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f0981439-91ba-462d-846a-d8bc39ed9946",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"
+  },
+  "id": "wmVmNNR2RaX8ICkn",
+  "tags": []
+}

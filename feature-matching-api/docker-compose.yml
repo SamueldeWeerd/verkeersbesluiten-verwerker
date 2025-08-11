@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  feature-matching-api:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: feature-matching-api
+    ports:
+      - "8005:8000"
+    volumes:
+      # Persist output files
+      - ./data/outputs:/app/outputs
+      # Optional: Mount a local directory for easier testing
+      - ./data/test_images:/app/test_images:ro
+      - ./data/uploads:/app/uploads
+      # Persist ROMA model checkpoints to avoid re-downloading
+      - ./ROMA_checkpoints:/app/ROMA_checkpoints
+      - huggingface-cache:/root/.cache/huggingface
+    environment:
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+      - GUNICORN_CMD_ARGS="--log-level debug --error-logfile - --access-logfile -"
+      # Add ROMA environment variables
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=-1  # Use CPU only, change to 0 for GPU
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 30s
+      retries: 3
+      start_period: 60s  # Increased for ROMA model loading
+    restart: always
+    networks:
+      - n8n-network
+    stop_grace_period: 600s
+    # Add resource limits for ROMA
+    deploy:
+      resources:
+        limits:
+          memory: 8G  # Conservative limit to prevent OOMkill  
+        reservations:
+          memory: 4G
+
+networks:
+  feature-matching-network:
+    driver: bridge
+  n8n-network:
+    external: true
+
+volumes:
+  outputs-data:
+  uploads-data:
+  huggingface-cache:

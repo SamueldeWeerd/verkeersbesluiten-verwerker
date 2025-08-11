@@ -1,0 +1,176 @@
+volumes:
+  n8n_storage:
+  postgres_storage:
+  huggingface-cache:
+
+networks:
+  n8n-network:
+    external: true
+
+x-n8n: &service-n8n
+  image: n8nio/n8n:latest
+  networks: ['n8n-network']
+  environment:
+    - DB_TYPE=postgresdb
+    - DB_POSTGRESDB_HOST=postgres
+    - DB_POSTGRESDB_USER=${POSTGRES_USER}
+    - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+    - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+    - N8N_DIAGNOSTICS_ENABLED=false
+    - N8N_PERSONALIZATION_ENABLED=false
+    - N8N_ENCRYPTION_KEY
+    - N8N_USER_MANAGEMENT_JWT_SECRET
+    - OLLAMA_HOST=${OLLAMA_HOST:-ollama:11434}
+    - OPENAI_API_KEY
+  env_file:
+    - path: .env
+      required: true
+
+
+
+services:
+  postgres:
+    image: postgis/postgis:16-3.4
+    hostname: ${POSTGRES_HOST}
+    networks: ['n8n-network']
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432" # 5432 is the default port for PostgreSQL
+    volumes:
+      - postgres_storage:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  n8n:
+    <<: *service-n8n
+    hostname: n8n
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - 5678:5678
+    volumes:
+      - n8n_storage:/home/node/.n8n
+      - ./shared:/data/shared
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  fastapi:
+    build: ./api
+    container_name: fastapi
+    networks: ['n8n-network']
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - N8N_HOST=http://n8n:5678
+    env_file: .env
+    depends_on:
+      - n8n
+
+  feature-matching-api:
+    build: ./feature-matching-api
+    hostname: feature-matching-api
+    container_name: feature-matching-api
+    networks: ['n8n-network']
+    restart: unless-stopped
+    ports:
+      - "8005:8000"
+    environment:
+      - PYTHONPATH=/app
+      - CUDA_VISIBLE_DEVICES=-1
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+      - GUNICORN_CMD_ARGS=--log-level debug --error-logfile - --access-logfile -
+      # Multi-core CPU Configuration (override in .env for your specific system)
+      - CPU_CORES=${CPU_CORES:-8}
+      - TORCH_THREADS=${TORCH_THREADS:-8}
+      # ROMA Configuration optimized for multi-core CPU
+      - ROMA_FORCE_CPU=${ROMA_FORCE_CPU:-true}
+      - ROMA_MEMORY_EFFICIENT=${ROMA_MEMORY_EFFICIENT:-true}
+      - ROMA_MAX_IMAGE_SIZE=${ROMA_MAX_IMAGE_SIZE:-196}
+      - ROMA_MAX_KEYPOINTS=${ROMA_MAX_KEYPOINTS:-200}
+      - ROMA_COARSE_RES=${ROMA_COARSE_RES:-196}
+      - ROMA_UPSAMPLE_RES=${ROMA_UPSAMPLE_RES:-280}
+      # Multi-processing settings
+      - ENABLE_MULTIPROCESSING=${ENABLE_MULTIPROCESSING:-true}
+      - BATCH_SIZE=${BATCH_SIZE:-4}
+      # Feature Matching Configuration
+      - BUFFER_SIZES=${BUFFER_SIZES:-20,800,5000}
+      - MIN_MATCH_COUNT=${MIN_MATCH_COUNT:-10}
+      - MIN_INLIER_RATIO=${MIN_INLIER_RATIO:-0.1}
+      - MAX_MEMORY_MB=${MAX_MEMORY_MB:-6000}
+      - IMAGE_RESIZE_MAX_PIXELS=${IMAGE_RESIZE_MAX_PIXELS:-4200000}
+    volumes:
+      - ./feature-matching-api/data/outputs:/app/outputs
+      - ./feature-matching-api/data/test_images:/app/test_images:ro
+      - ./feature-matching-api/data/uploads:/app/uploads
+      # Persist ROMA model checkpoints to avoid re-downloading
+      - ./ROMA_checkpoints:/app/ROMA_checkpoints
+      - huggingface-cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 30s
+      start_period: 60s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+
+  koop-api-service:
+    build: ./koop-api
+    hostname: koop-api-service
+    container_name: koop-api-service
+    networks: ['n8n-network']
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      - API_PORT=8001
+      - API_PROTOCOL=http
+      - PYTHONUNBUFFERED=1
+      - API_HOST=localhost
+    volumes:
+      - ./koop-api/afbeeldingen:/app/afbeeldingen
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--quiet", "-O", "/dev/null", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  ollama:
+    image: ollama/ollama:latest
+    hostname: ollama
+    container_name: ollama
+    networks: ['n8n-network']
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ${OLLAMA_DATA_PATH:-./ollama-data}:/root/.ollama
+      - ./ollama-init.sh:/usr/local/bin/ollama-init.sh
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llama3.2:1b}  # Configurable model
+    entrypoint: ["/bin/bash", "/usr/local/bin/ollama-init.sh"]
+    deploy:
+      resources:
+        limits:
+          memory: 3G  # Reduced for smaller 1B model
+        reservations:
+          memory: 1G
+    

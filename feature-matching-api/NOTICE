@@ -1,0 +1,20 @@
+NOTICE
+
+This project includes components from DINOv2, which is licensed under the Apache License, Version 2.0.
+
+DINOv2: https://github.com/facebookresearch/dinov2
+Copyright (c) Meta Platforms, Inc. and affiliates.
+
+The model weights (e.g., dinov2_vitl14_pretrain.pth) used in this project are provided by Meta under the Apache License 2.0.
+
+The ROMA model is under MIT license.
+
+This project uses OpenCV's KAZE feature detector, which is licensed under:
+- Apache License 2.0 (OpenCV 4.5.0 and higher)
+- 3-clause BSD License (OpenCV 4.4.0 and lower)
+
+The original KAZE algorithm was developed by Pablo F. Alcantarilla and is available under BSD-3-Clause License.
+
+## Licenses
+
+This project is licensed under the MIT License.

@@ -1,0 +1,37 @@
+# Training data generation (not needed in Docker container)
+generate_map_training_data.py
+training_data/
+training_data_generation.log
+
+# Development and local files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.DS_Store
+.vscode/
+.idea/
+
+# Local data directories
+data/outputs/
+data/uploads/
+outputs/
+uploads/
+output/
+
+# Git
+.git/
+.gitignore
+
+# Documentation (if you want to keep container minimal)
+README.md
+
+# Logs
+*.log
+
+
+
+# Exclude ROMA model files; they need to be downloaded from the server,
+# because they're not included in the GIT repo
+ROMA_checkpoints/ 
