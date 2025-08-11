@@ -5,7 +5,6 @@ volumes:
 
 networks:
   n8n-network:
-    external: true
 
 x-n8n: &service-n8n
   image: n8nio/n8n:latest
