@@ -596,7 +596,7 @@
             {
               "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
               "name": "samenvatting",
-              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.abstract'] }}",
+              "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json.samenvatting }}",
               "type": "string"
             },
             {
@@ -620,7 +620,7 @@
             {
               "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
               "name": "image",
-              "value": "={{ $('HTTP Request1').item.json.images[0].includes('pdf') ? 'http://koop-api-service:8000' + $('HTTP Request1').item.json.images[0] : $('HTTP Request1').item.json.images[0] }}",
+              "value": "={{ $('HTTP Request').item.json.images[0].includes('pdf') ? 'http://koop-api-service:8000' + $('HTTP Request').item.json.images[0] :  $('HTTP Request').item.json.images[0]}}",
               "type": "string"
             },
             {
@@ -1246,7 +1246,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f395087c-cc0d-4649-836b-5eb87cec875d",
+  "versionId": "2fc5a691-c180-48ee-a2e5-8321110dc871",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"
