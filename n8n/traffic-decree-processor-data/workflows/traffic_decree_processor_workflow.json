@@ -10,8 +10,8 @@
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
       "position": [
-        -1940,
-        680
+        -1936,
+        688
       ],
       "id": "c29bf6f6-496e-4c4a-a564-ab87f3a7789b",
       "name": "Webhook",
@@ -25,7 +25,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        640,
+        848,
         800
       ],
       "id": "dc21339f-3df3-4751-b31b-26d0c695890c",
@@ -45,12 +45,13 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -520,
-        680
+        -736,
+        672
       ],
       "id": "b7eb9aeb-cffb-47bb-963d-a391c15fc58d",
       "name": "HTTP Request",
-      "retryOnFail": true
+      "retryOnFail": true,
+      "alwaysOutputData": true
     },
     {
       "parameters": {
@@ -59,8 +60,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -180,
-        660
+        32,
+        672
       ],
       "id": "62d9855f-c4f4-4935-b96b-a7c8a1cbf8c0",
       "name": "Loop Over Items",
@@ -80,8 +81,8 @@
       "type": "@n8n/n8n-nodes-langchain.informationExtractor",
       "typeVersion": 1.2,
       "position": [
-        640,
-        660
+        848,
+        672
       ],
       "id": "f07b57dc-e8b9-46a5-a6df-51d6888355f8",
       "name": "Information Extractor",
@@ -124,8 +125,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3180,
-        120
+        3392,
+        128
       ],
       "id": "75be8ed2-b924-48d0-bf21-b689b0f2509c",
       "name": "HTTP Request to Feature Matching Model",
@@ -178,7 +179,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2720,
+        2928,
         240
       ],
       "id": "a815a640-bed0-430e-b28a-5e24460485e0",
@@ -211,8 +212,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1500,
-        540
+        1712,
+        544
       ],
       "id": "2a3398e2-c621-4d90-8794-2f4f62c8dc62",
       "name": "if PDF"
@@ -224,8 +225,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2460,
-        180
+        2672,
+        192
       ],
       "id": "f60301bd-55e2-49c6-a67a-c8e3ea945a36",
       "name": "format output1"
@@ -258,8 +259,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1220,
-        660
+        1440,
+        672
       ],
       "id": "5d14505f-02c3-4a73-9bf0-208287961f04",
       "name": "check if besluit has images"
@@ -323,8 +324,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        980,
-        660
+        1200,
+        672
       ],
       "id": "427b32fe-e86c-437a-9c5e-063f4abaf312",
       "name": "set up relevant fields, including 'AI Summary'"
@@ -406,8 +407,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        260,
-        220
+        480,
+        224
       ],
       "id": "950cbece-dfb0-43e0-b59b-a084ac8b1cbd",
       "name": "extract relevant fields"
@@ -420,7 +421,7 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        0,
+        208,
         0
       ],
       "id": "2621ae6f-f0c4-490b-9c32-1f9e108aca74",
@@ -435,8 +436,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        880,
-        140
+        1088,
+        144
       ],
       "id": "db5c8565-4598-415f-ae42-28e5639303ba",
       "name": "populate table in postgresdatabase",
@@ -454,8 +455,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        560,
-        140
+        768,
+        144
       ],
       "id": "c24a789d-2d96-4e2f-9d73-5f3af1600265",
       "name": "Loop Over Items1"
@@ -468,7 +469,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1660,
+        1872,
         0
       ],
       "id": "8766d5eb-0bcd-4cdf-ad58-7ad8ecb97a54",
@@ -491,7 +492,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        2320,
+        2528,
         0
       ],
       "id": "dbdfb9e3-8481-4412-a6b8-c69306461149",
@@ -521,8 +522,8 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        2100,
-        200
+        2320,
+        208
       ],
       "id": "f9146dd0-0585-42e7-b97b-9a32179a04c4",
       "name": "Analyze image from url",
@@ -543,7 +544,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        80,
+        288,
         480
       ],
       "id": "c454916e-3e62-48be-9c23-4604504573e6",
@@ -564,8 +565,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        -1500,
-        200
+        -1504,
+        208
       ],
       "id": "2e1a1667-63d0-4fcd-9b8c-2c71c4c3d73c",
       "name": "Split Out for geometry"
@@ -641,8 +642,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4080,
-        300
+        4288,
+        304
       ],
       "id": "3d2e9c4f-6ca6-4f60-b931-5faf87eb922c",
       "name": "set up final fields"
@@ -656,8 +657,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        -1240,
-        200
+        -1248,
+        208
       ],
       "id": "6c767066-937e-4b8f-8369-27ab1d43c334",
       "name": "split out for images"
@@ -733,8 +734,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1980,
-        680
+        2192,
+        688
       ],
       "id": "5718d64e-ad30-47f9-bdc1-ba866189a4cc",
       "name": "set up final fields1"
@@ -810,8 +811,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2980,
-        260
+        3200,
+        272
       ],
       "id": "77642e7e-6ea3-4b4a-a8b1-2eab467f42dd",
       "name": "set up final fields2"
@@ -823,8 +824,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1540,
-        680
+        -1536,
+        688
       ],
       "id": "e08bbd39-41d3-44cc-9845-c3bec4183287",
       "name": "Code"
@@ -836,8 +837,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -940,
-        680
+        -1088,
+        688
       ],
       "id": "6450c616-d6bd-4b71-92f8-cb1f0318d04d",
       "name": "Loop over days",
@@ -854,11 +855,55 @@
       "type": "n8n-nodes-base.editImage",
       "typeVersion": 1,
       "position": [
-        1880,
+        2096,
         0
       ],
       "id": "3dd760bb-0ee7-4f71-ac3f-be39807a680c",
       "name": "Edit Image"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e3a05055-d693-4347-a85d-9f9ba9325283",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "c9234c70-2ccb-4c73-a046-7628bc0f4eb5",
+              "leftValue": "={{ $json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        672
+      ],
+      "id": "3cd44d23-3357-4c54-8b6e-437b551d98f7",
+      "name": "if valid traffic decrees found on that day"
     }
   ],
   "pinData": {},
@@ -878,7 +923,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "if valid traffic decrees found on that day",
             "type": "main",
             "index": 0
           }
@@ -1177,13 +1222,31 @@
           }
         ]
       ]
+    },
+    "if valid traffic decrees found on that day": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop over days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "f0981439-91ba-462d-846a-d8bc39ed9946",
+  "versionId": "f395087c-cc0d-4649-836b-5eb87cec875d",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"
