@@ -130,7 +130,9 @@
       ],
       "id": "75be8ed2-b924-48d0-bf21-b689b0f2509c",
       "name": "HTTP Request to Feature Matching Model",
-      "retryOnFail": true
+      "retryOnFail": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -642,7 +644,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4288,
+        4496,
         304
       ],
       "id": "3d2e9c4f-6ca6-4f60-b931-5faf87eb922c",
@@ -801,7 +803,7 @@
             {
               "id": "c494b08b-17b0-4b9f-b967-3e8523930d13",
               "name": "warped-georeferenced-geotiff-url",
-              "value": "=null",
+              "value": "=Not a map",
               "type": "string"
             }
           ]
@@ -904,6 +906,117 @@
       ],
       "id": "3cd44d23-3357-4c54-8b6e-437b551d98f7",
       "name": "if valid traffic decrees found on that day"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3e2a18f-2341-44bd-9b29-4c7df3bd887b",
+              "name": "id",
+              "value": "={{ $('HTTP Request').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "edab0384-2aba-4f70-8341-5def045738e3",
+              "name": "gemeente",
+              "value": "={{ $('HTTP Request').item.json.metadata['DC.creator'] }}",
+              "type": "string"
+            },
+            {
+              "id": "23f59378-3393-4a59-9cd8-61479a85af85",
+              "name": "titel",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.alternative'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
+              "name": "samenvatting",
+              "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json.samenvatting }}",
+              "type": "string"
+            },
+            {
+              "id": "a47421ee-e599-4526-953e-438f07e60e90",
+              "name": "AI-samenvatting",
+              "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json['AI-samenvatting'] }}",
+              "type": "string"
+            },
+            {
+              "id": "ce8d8769-c65a-4fde-a451-ab3cd1806f1d",
+              "name": "datum",
+              "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.available'] }}",
+              "type": "string"
+            },
+            {
+              "id": "b38ee769-8c51-4c08-9cf6-62a3d2e21cd7",
+              "name": "geometrie",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.gebiedsmarkering'][0].geometrie }}",
+              "type": "string"
+            },
+            {
+              "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
+              "name": "image",
+              "value": "={{ $('HTTP Request').item.json.images[0].includes('pdf') ? 'http://koop-api-service:8000' + $('HTTP Request').item.json.images[0] :  $('HTTP Request').item.json.images[0]}}",
+              "type": "string"
+            },
+            {
+              "id": "9ecdba8b-537f-4740-8a43-d503a0c625f8",
+              "name": "map-type",
+              "value": "={{ $('format output1').item.json['map-type'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c494b08b-17b0-4b9f-b967-3e8523930d13",
+              "name": "warped-georeferenced-geotiff-url",
+              "value": "=Georeferencing failed. No matches found.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3968,
+        272
+      ],
+      "id": "062f0863-d132-487a-afe2-957d5df07b79",
+      "name": "set up final fields3"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "d4db4e26-2d60-4991-8b82-9e807c8acd30",
+              "leftValue": "={{ $json.success }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3760,
+        128
+      ],
+      "id": "795a20c6-e7ee-4742-b515-8f95edb2474c",
+      "name": "if match is found"
     }
   ],
   "pinData": {},
@@ -984,7 +1097,7 @@
       "main": [
         [
           {
-            "node": "set up final fields",
+            "node": "if match is found",
             "type": "main",
             "index": 0
           }
@@ -1240,13 +1353,42 @@
           }
         ]
       ]
+    },
+    "set up final fields3": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "if match is found": {
+      "main": [
+        [
+          {
+            "node": "set up final fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "set up final fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "2fc5a691-c180-48ee-a2e5-8321110dc871",
+  "versionId": "c64455b0-3d8e-47f1-b333-62bd3b1338b6",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"

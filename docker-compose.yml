@@ -89,8 +89,8 @@ services:
       - PYTHONUNBUFFERED=1
       - GUNICORN_CMD_ARGS=--log-level debug --error-logfile - --access-logfile -
       # Multi-core CPU Configuration (override in .env for your specific system)
-      - CPU_CORES=${CPU_CORES:-8}
-      - TORCH_THREADS=${TORCH_THREADS:-8}
+      - CPU_CORES=${CPU_CORES:-4}
+      - TORCH_THREADS=${TORCH_THREADS:-4}
       # ROMA Configuration optimized for multi-core CPU
       - ROMA_FORCE_CPU=${ROMA_FORCE_CPU:-true}
       - ROMA_MEMORY_EFFICIENT=${ROMA_MEMORY_EFFICIENT:-true}
