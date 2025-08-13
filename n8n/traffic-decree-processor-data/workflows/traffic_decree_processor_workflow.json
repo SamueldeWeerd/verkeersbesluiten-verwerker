@@ -72,9 +72,9 @@
       "parameters": {
         "text": "={{ $json.text }}",
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"samenvatting\": {\n      \"type\": \"string\",\n      \"description\": \"Samenvatting van het verkeersbesluit in maximaal drie zinnen.\"\n    }\n  },\n  \"required\": [\"samenvatting\"]\n}",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"samenvatting\": {\n      \"type\": \"string\",\n      \"description\": \"Samenvatting van het verkeersbesluit in maximaal twee zinnen. Gebruik enkel punten en komma's in de samenvatting.\"\n    }\n  },\n  \"required\": [\"samenvatting\"]\n}",
         "options": {
-          "systemPromptTemplate": "=KRITISCH: Antwoord ALLEEN met een JSON object. GEBRUIK GEEN markdown, GEEN '```' codeblokken, GEEN uitleg.\n\nTaak: Maak een Nederlandse samenvatting van de verkeerstekst in maximaal drie zinnen.\n\nStart je antwoord direct met gekrulde haakjes van een json formatting, geen enkele andere leestekens toevoegen.",
+          "systemPromptTemplate": "=KRITISCH: Antwoord ALLEEN met een JSON object. GEBRUIK GEEN markdown, GEEN '```' codeblokken, GEEN uitleg.\n\nTaak: Maak een Nederlandse samenvatting van de verkeerstekst in maximaal twee zinnen. Gebruik enkel punten en komma's als leestekens in de samenvatting.\n\nStart je antwoord direct met gekrulde haakjes van een json formatting, geen enkele andere leestekens toevoegen.",
           "batching": {}
         }
       },
@@ -339,67 +339,67 @@
             {
               "id": "1d9d8923-d02e-4650-b75d-c6edf11c2fb4",
               "name": "id",
-              "value": "={{ $('Loop Over Items').item.json.id }}",
+              "value": "={{ $('Loop Over Items1').item.json.id }}",
               "type": "string"
             },
             {
               "id": "f1ae4c73-6a1d-4d46-bad8-8ff7730b8031",
               "name": "gemeente",
-              "value": "={{ $('Loop Over Items').item.json.gemeente }}",
+              "value": "={{ $('Loop Over Items1').item.json.gemeente }}",
               "type": "string"
             },
             {
               "id": "67311ee6-537b-470b-9ae5-831a76d78f09",
               "name": "titel",
-              "value": "={{ $('Loop Over Items').item.json.titel }}",
+              "value": "={{ $('Loop Over Items1').item.json.titel }}",
               "type": "string"
             },
             {
               "id": "edbc5512-197e-476d-90fb-4bc6453497c8",
               "name": "samenvatting",
-              "value": "={{ $('Loop Over Items').item.json.samenvatting }}",
+              "value": "={{ $('Loop Over Items1').item.json.samenvatting }}",
               "type": "string"
             },
             {
               "id": "1629d459-d88e-46cd-8afe-cbd643f77a53",
               "name": "ai-samenvatting",
-              "value": "={{ $('Loop Over Items').item.json['AI-samenvatting'] }}",
+              "value": "={{ $('Loop Over Items1').item.json['AI-samenvatting'] }}",
               "type": "string"
             },
             {
               "id": "795f64db-2aad-4a76-8eb4-c68c5d8f7966",
               "name": "beschikbaar",
-              "value": "={{ $('Loop Over Items').item.json.datum }}",
+              "value": "={{ $('Loop Over Items1').item.json.datum }}",
               "type": "string"
             },
             {
               "id": "81b54562-cead-429e-a821-e71b9f63d350",
               "name": "original-image",
-              "value": "={{ $('Loop Over Items').item.json.image }}",
+              "value": "={{ $('Loop Over Items1').item.json.image }}",
               "type": "string"
             },
             {
               "id": "5d034376-2169-4f43-9122-6af819941563",
               "name": "geotiff-url",
-              "value": "={{ $('Loop Over Items').item.json['warped-georeferenced-geotiff-url'] }}",
+              "value": "={{ $('Loop Over Items1').item.json['warped-georeferenced-geotiff-url'] }}",
               "type": "string"
             },
             {
               "id": "19bd369d-7041-4890-8d26-63a6c96d492b",
               "name": "geom_multipoint",
-              "value": "={{ $('Loop Over Items').item.json.geometrie.includes('POINT') ? $('Loop Over Items').item.json.geometrie : null }}",
+              "value": "={{ $('Loop Over Items1').item.json.geometrie.includes('POINT') ? $('Loop Over Items1').item.json.geometrie : null }}",
               "type": "string"
             },
             {
               "id": "67bfd039-4ddf-4a50-a11b-20bcb8289bbd",
               "name": "geom_multilinestring",
-              "value": "={{ $('Loop Over Items').item.json.geometrie?.includes('LINE') ? $('Loop Over Items').item.json.geometrie : null }}",
+              "value": "={{ $('Loop Over Items1').item.json.geometrie?.includes('LINE') ? $('Loop Over Items1').item.json.geometrie : null }}",
               "type": "string"
             },
             {
               "id": "043c9d86-2373-410e-b481-504ec032508f",
               "name": "geom_multipolygon",
-              "value": "={{ $('Loop Over Items').item.json.geometrie?.includes('POLYGON') ? $('Loop Over Items').item.json.geometrie : null }}",
+              "value": "={{ $('Loop Over Items1').item.json.geometrie?.includes('POLYGON') ? $('Loop Over Items1').item.json.geometrie : null }}",
               "type": "string"
             }
           ]
@@ -409,8 +409,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        480,
-        224
+        800,
+        160
       ],
       "id": "950cbece-dfb0-43e0-b59b-a084ac8b1cbd",
       "name": "extract relevant fields"
@@ -432,14 +432,14 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO verkeersbesluiten.verkeersai (\n  id,\n  gemeente,\n  titel,\n  samenvatting,\n  ai_samenvatting,\n  available,\n  original_image,\n  PATH,\n  geom_multipolygon,\n  geom_multilinestring,\n  geom_multipoint\n)\nVALUES (\n  '{{ $json.id }}',\n  '{{ $json.gemeente }}',\n  '{{ $json.titel }}',\n  '{{ $json.samenvatting }}',\n  '{{ $json['ai-samenvatting'] }}',\n  '{{ $json.beschikbaar }}',\n  '{{ $json['original-image'] }}',\n  '{{ $json['geotiff-url'] }}',\n  {{ $json.geom_multipolygon ? `ST_GeomFromText('${$json.geom_multipolygon}', 28992)` : 'NULL' }},\n  {{ $json.geom_multilinestring ? `ST_GeomFromText('${$json.geom_multilinestring}', 28992)` : 'NULL' }},\n  {{ $json.geom_multipoint ? `ST_GeomFromText('${$json.geom_multipoint}', 28992)` : 'NULL' }}\n)\nON CONFLICT (id) DO UPDATE SET\n  gemeente = EXCLUDED.gemeente,\n  titel = EXCLUDED.titel,\n  samenvatting = EXCLUDED.samenvatting,\n  ai_samenvatting = EXCLUDED.ai_samenvatting,\n  available = EXCLUDED.available,\n  original_image = EXCLUDED.original_image,\n  PATH = EXCLUDED.PATH,\n  geom_multipolygon = EXCLUDED.geom_multipolygon,\n  geom_multilinestring = EXCLUDED.geom_multilinestring,\n  geom_multipoint = EXCLUDED.geom_multipoint;",
+        "query": "INSERT INTO verkeersbesluiten.verkeersai (\n  id,\n  gemeente,\n  titel,\n  samenvatting,\n  ai_samenvatting,\n  available,\n  original_image,\n  PATH,\n  geom_multipolygon,\n  geom_multilinestring,\n  geom_multipoint\n)\nVALUES (\n  '{{ $('extract relevant fields').item.json.id }}',\n  '{{ $('extract relevant fields').item.json.gemeente }}',\n  '{{ $('extract relevant fields').item.json.titel }}',\n  '{{ $('extract relevant fields').item.json.samenvatting }}',\n  '{{ $('extract relevant fields').item.json['ai-samenvatting'] }}',\n  '{{ $('extract relevant fields').item.json.beschikbaar }}',\n  '{{ $('extract relevant fields').item.json['original-image'] }}',\n  '{{ $('extract relevant fields').item.json['geotiff-url'] }}',\n  {{ $('extract relevant fields').item.json.geom_multipolygon ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipolygon}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multilinestring ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multilinestring}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multipoint ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipoint}', 28992)` : 'NULL' }}\n)\nON CONFLICT (id) DO UPDATE SET\n  gemeente = EXCLUDED.gemeente,\n  titel = EXCLUDED.titel,\n  samenvatting = EXCLUDED.samenvatting,\n  ai_samenvatting = EXCLUDED.ai_samenvatting,\n  available = EXCLUDED.available,\n  original_image = EXCLUDED.original_image,\n  PATH = EXCLUDED.PATH,\n  geom_multipolygon = EXCLUDED.geom_multipolygon,\n  geom_multilinestring = EXCLUDED.geom_multilinestring,\n  geom_multipoint = EXCLUDED.geom_multipoint;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1088,
-        144
+        1232,
+        160
       ],
       "id": "db5c8565-4598-415f-ae42-28e5639303ba",
       "name": "populate table in postgresdatabase",
@@ -457,8 +457,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        768,
-        144
+        544,
+        160
       ],
       "id": "c24a789d-2d96-4e2f-9d73-5f3af1600265",
       "name": "Loop Over Items1"
@@ -546,8 +546,8 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        288,
-        480
+        1024,
+        160
       ],
       "id": "c454916e-3e62-48be-9c23-4604504573e6",
       "name": "create table in postgresdatabase",
@@ -714,19 +714,19 @@
             {
               "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
               "name": "image",
-              "value": "=null",
-              "type": "string"
+              "value": "={{null}}",
+              "type": "object"
             },
             {
-              "id": "9ecdba8b-537f-4740-8a43-d503a0c625f8",
+              "id": "857250d3-27f3-4a39-8ffa-d315e2852ae3",
               "name": "map-type",
-              "value": "=null",
+              "value": "={{ null }}",
               "type": "string"
             },
             {
-              "id": "c494b08b-17b0-4b9f-b967-3e8523930d13",
+              "id": "a1a8d688-75f0-47eb-b42e-03a29eb0bbc0",
               "name": "warped-georeferenced-geotiff-url",
-              "value": "=null",
+              "value": "={{ null }}",
               "type": "string"
             }
           ]
@@ -791,19 +791,19 @@
             {
               "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
               "name": "image",
-              "value": "={{ $json.images[0] }}",
+              "value": "={{ null }}",
               "type": "string"
             },
             {
               "id": "9ecdba8b-537f-4740-8a43-d503a0c625f8",
               "name": "map-type",
-              "value": "={{ $('format output1')?.item?.json?.['map-type'] ?? null }}",
+              "value": "={{  null }}",
               "type": "string"
             },
             {
               "id": "c494b08b-17b0-4b9f-b967-3e8523930d13",
               "name": "warped-georeferenced-geotiff-url",
-              "value": "=Not a map",
+              "value": "={{null}}",
               "type": "string"
             }
           ]
@@ -1052,12 +1052,12 @@
             "index": 0
           },
           {
-            "node": "create table in postgresdatabase",
+            "node": "Loop over days",
             "type": "main",
             "index": 0
           },
           {
-            "node": "Loop over days",
+            "node": "Loop Over Items1",
             "type": "main",
             "index": 0
           }
@@ -1184,7 +1184,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items1",
+            "node": "create table in postgresdatabase",
             "type": "main",
             "index": 0
           }
@@ -1207,7 +1207,7 @@
         [],
         [
           {
-            "node": "populate table in postgresdatabase",
+            "node": "extract relevant fields",
             "type": "main",
             "index": 0
           }
@@ -1329,7 +1329,7 @@
       "main": [
         [
           {
-            "node": "extract relevant fields",
+            "node": "populate table in postgresdatabase",
             "type": "main",
             "index": 0
           }
@@ -1388,7 +1388,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "c64455b0-3d8e-47f1-b333-62bd3b1338b6",
+  "versionId": "3d579465-760b-428c-abac-d7445be29116",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"
