@@ -8,19 +8,19 @@
 1. **Install Docker Desktop**:
    - Download from [Docker Desktop](https://www.docker.com/products/docker-desktop)
    - Install and start Docker Desktop
-   - Ensure Docker UI is running (check menu bar/system tray)
 
 ### Setup Steps
 1. **Clone Repository**:
-   ```bash
-   git clone https://github.com/SamueldeWeerd/traffic-decree-processing-model.git
-   cd traffic-decree-processing-model
-   ```
+   - download ZIP file from https://github.com/SamueldeWeerd/traffic-decree-processing-model.git
+   ![GitHub Download Process](./assets/github_download.png)
+   - unpack zip file
+   - open terminal in directory
+   ![Terminal Commands](./assets/terminal.png)
+
 
 2. **Copy Configuration File**:
-   ```bash
-   cp config.env .env
-   ```
+   - add .env file to root folder 
+   - if .env file is not found when it's in the root, it's missing the . before env
 
 3. **Configure Credentials**:
    - Add OpenAI API key to `.env`: `OPENAI_API_KEY=sk-your-key`
@@ -95,6 +95,8 @@
 - **Output**: Structured data, workflow routing decisions
 
 ## Processing Pipeline Flow
+
+![Complete Workflow Process](./assets/workflow.png)
 
 ```
 Government APIs → KOOP API → Traffic Decree Data + Images
