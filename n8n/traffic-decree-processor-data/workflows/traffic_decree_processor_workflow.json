@@ -19,14 +19,14 @@
     },
     {
       "parameters": {
-        "model": "qwen2.5:3b",
+        "model": "=qwen2.5:3b",
         "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        848,
-        800
+        512,
+        864
       ],
       "id": "dc21339f-3df3-4751-b31b-26d0c695890c",
       "name": "Ollama Chat Model",
@@ -40,7 +40,9 @@
     {
       "parameters": {
         "url": "=http://koop-api-service:8000/besluiten/{{$json.date }}/{{ $json.date }}?{{ $json.query }}",
-        "options": {}
+        "options": {
+          "timeout": 3000000
+        }
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
@@ -72,17 +74,17 @@
       "parameters": {
         "text": "={{ $json.text }}",
         "schemaType": "manual",
-        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"samenvatting\": {\n      \"type\": \"string\",\n      \"description\": \"Samenvatting van het verkeersbesluit in maximaal twee zinnen. Gebruik enkel punten en komma's in de samenvatting.\"\n    }\n  },\n  \"required\": [\"samenvatting\"]\n}",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"samenvatting\": {\n      \"type\": \"string\",\n      \"description\": \"Samenvatting van het verkeersbesluit in maximaal twee zinnen. Gebruik geen leestekens.\"\n    }\n  },\n  \"required\": [\"samenvatting\"]\n}",
         "options": {
-          "systemPromptTemplate": "=KRITISCH: Antwoord ALLEEN met een JSON object. GEBRUIK GEEN markdown, GEEN '```' codeblokken, GEEN uitleg.\n\nTaak: Maak een Nederlandse samenvatting van de verkeerstekst in maximaal twee zinnen. Gebruik enkel punten en komma's als leestekens in de samenvatting.\n\nStart je antwoord direct met gekrulde haakjes van een json formatting, geen enkele andere leestekens toevoegen.",
+          "systemPromptTemplate": "=KRITISCH: Antwoord ALLEEN met een JSON object. GEBRUIK GEEN markdown, GEEN '```' codeblokken, GEEN uitleg.\n\nTaak: Maak een Nederlandse samenvatting van de verkeerstekst in maximaal twee zinnen. Gebruik geen leestekens.\n\nStart je antwoord direct met gekrulde haakjes van een json formatting.",
           "batching": {}
         }
       },
       "type": "@n8n/n8n-nodes-langchain.informationExtractor",
       "typeVersion": 1.2,
       "position": [
-        848,
-        672
+        496,
+        688
       ],
       "id": "f07b57dc-e8b9-46a5-a6df-51d6888355f8",
       "name": "Information Extractor",
@@ -125,7 +127,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3392,
+        3600,
         128
       ],
       "id": "75be8ed2-b924-48d0-bf21-b689b0f2509c",
@@ -181,7 +183,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2928,
+        3136,
         240
       ],
       "id": "a815a640-bed0-430e-b28a-5e24460485e0",
@@ -214,7 +216,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1712,
+        1920,
         544
       ],
       "id": "2a3398e2-c621-4d90-8794-2f4f62c8dc62",
@@ -227,7 +229,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2672,
+        2880,
         192
       ],
       "id": "f60301bd-55e2-49c6-a67a-c8e3ea945a36",
@@ -261,7 +263,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1440,
+        1648,
         672
       ],
       "id": "5d14505f-02c3-4a73-9bf0-208287961f04",
@@ -326,7 +328,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1200,
+        1408,
         672
       ],
       "id": "427b32fe-e86c-437a-9c5e-063f4abaf312",
@@ -352,6 +354,12 @@
               "id": "67311ee6-537b-470b-9ae5-831a76d78f09",
               "name": "titel",
               "value": "={{ $('Loop Over Items1').item.json.titel }}",
+              "type": "string"
+            },
+            {
+              "id": "3b193c53-81dc-4ad5-8bc1-eb16cce64572",
+              "name": "bordcode",
+              "value": "={{ $json.bordcode }}",
               "type": "string"
             },
             {
@@ -409,7 +417,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        800,
+        1008,
         160
       ],
       "id": "950cbece-dfb0-43e0-b59b-a084ac8b1cbd",
@@ -432,13 +440,15 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO verkeersbesluiten.verkeersai (\n  id,\n  gemeente,\n  titel,\n  samenvatting,\n  ai_samenvatting,\n  available,\n  original_image,\n  PATH,\n  geom_multipolygon,\n  geom_multilinestring,\n  geom_multipoint\n)\nVALUES (\n  '{{ $('extract relevant fields').item.json.id }}',\n  '{{ $('extract relevant fields').item.json.gemeente }}',\n  '{{ $('extract relevant fields').item.json.titel }}',\n  '{{ $('extract relevant fields').item.json.samenvatting }}',\n  '{{ $('extract relevant fields').item.json['ai-samenvatting'] }}',\n  '{{ $('extract relevant fields').item.json.beschikbaar }}',\n  '{{ $('extract relevant fields').item.json['original-image'] }}',\n  '{{ $('extract relevant fields').item.json['geotiff-url'] }}',\n  {{ $('extract relevant fields').item.json.geom_multipolygon ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipolygon}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multilinestring ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multilinestring}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multipoint ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipoint}', 28992)` : 'NULL' }}\n)\nON CONFLICT (id) DO UPDATE SET\n  gemeente = EXCLUDED.gemeente,\n  titel = EXCLUDED.titel,\n  samenvatting = EXCLUDED.samenvatting,\n  ai_samenvatting = EXCLUDED.ai_samenvatting,\n  available = EXCLUDED.available,\n  original_image = EXCLUDED.original_image,\n  PATH = EXCLUDED.PATH,\n  geom_multipolygon = EXCLUDED.geom_multipolygon,\n  geom_multilinestring = EXCLUDED.geom_multilinestring,\n  geom_multipoint = EXCLUDED.geom_multipoint;",
-        "options": {}
+        "query": "INSERT INTO verkeersbesluiten.verkeersai (\n  id,\n  gemeente,\n  titel,\n  bordcode,\n  samenvatting,\n  ai_samenvatting,\n  available,\n  original_image,\n  georeferenced_image,\n  geom_multipolygon,\n  geom_multilinestring,\n  geom_multipoint\n)\nVALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,\n  $7,\n  $8,\n  $9,\n  {{ $('extract relevant fields').item.json.geom_multipolygon ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipolygon}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multilinestring ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multilinestring}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multipoint ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipoint}', 28992)` : 'NULL' }}\n)\nON CONFLICT (id) DO UPDATE SET\n  gemeente = EXCLUDED.gemeente,\n  titel = EXCLUDED.titel,\n  bordcode = EXCLUDED.bordcode,\n  samenvatting = EXCLUDED.samenvatting,\n  ai_samenvatting = EXCLUDED.ai_samenvatting,\n  available = EXCLUDED.available,\n  original_image = EXCLUDED.original_image,\n  georeferenced_image = EXCLUDED.georeferenced_image,\n  geom_multipolygon = EXCLUDED.geom_multipolygon,\n  geom_multilinestring = EXCLUDED.geom_multilinestring,\n  geom_multipoint = EXCLUDED.geom_multipoint;",
+        "options": {
+          "queryReplacement": "=[   \"={{ $('extract relevant fields').item.json.id }}\",   \"={{ $('extract relevant fields').item.json.gemeente }}\",   \"={{ $('extract relevant fields').item.json.titel }}\",   \"={{ $('extract relevant fields').item.json.bordcode }}\",   \"={{ $('extract relevant fields').item.json.samenvatting }}\",   \"={{ $('extract relevant fields').item.json['ai-samenvatting'] }}\",   \"={{ $('extract relevant fields').item.json.beschikbaar }}\",   \"={{ $('extract relevant fields').item.json['original-image'] }}\",   \"={{ $('extract relevant fields').item.json['geotiff-url'] }}\" ]"
+        }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1232,
+        1440,
         160
       ],
       "id": "db5c8565-4598-415f-ae42-28e5639303ba",
@@ -457,7 +467,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        544,
+        752,
         160
       ],
       "id": "c24a789d-2d96-4e2f-9d73-5f3af1600265",
@@ -465,13 +475,13 @@
     },
     {
       "parameters": {
-        "url": "={{ $json.images[0].replace('localhost', 'koop-api-service').replace('8001', '8000') }}",
+        "url": "={{ 'http://koop-api-service:8000/' + $('HTTP Request').item.json.images[0] }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1872,
+        2080,
         0
       ],
       "id": "8766d5eb-0bcd-4cdf-ad58-7ad8ecb97a54",
@@ -494,7 +504,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        2528,
+        2736,
         0
       ],
       "id": "dbdfb9e3-8481-4412-a6b8-c69306461149",
@@ -524,7 +534,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        2320,
+        2528,
         208
       ],
       "id": "f9146dd0-0585-42e7-b97b-9a32179a04c4",
@@ -540,13 +550,13 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "CREATE EXTENSION IF NOT EXISTS postgis;\n\nCREATE SCHEMA IF NOT EXISTS verkeersbesluiten;\n\nDO $$\nBEGIN\n    IF NOT EXISTS (\n        SELECT FROM information_schema.tables \n        WHERE  table_schema = 'verkeersbesluiten'\n        AND    table_name   = 'verkeersai'\n    ) THEN\n        EXECUTE $stmt$\n            CREATE TABLE verkeersbesluiten.verkeersai (\n                id text PRIMARY KEY,\n                gemeente text,\n                titel text,\n                samenvatting text,\n                ai_samenvatting text,\n                available date,\n                original_image text,\n                PATH text,\n                geom_multipolygon geometry(MULTIPOLYGON),\n                geom_multilinestring geometry(MULTILINESTRING),\n                geom_multipoint geometry(MULTIPOINT, 28992)\n            );\n        $stmt$;\n\n        -- Create indexes\n        EXECUTE 'CREATE INDEX idx_geom_multilinestring ON verkeersbesluiten.verkeersai USING gist (geom_multilinestring)';\n        EXECUTE 'CREATE INDEX idx_geom_multipoint ON verkeersbesluiten.verkeersai USING gist (geom_multipoint)';\n        EXECUTE 'CREATE INDEX idx_geom_multipolygon ON verkeersbesluiten.verkeersai USING gist (geom_multipolygon)';\n    END IF;\nEND\n$$;",
+        "query": "CREATE EXTENSION IF NOT EXISTS postgis;\n\nCREATE SCHEMA IF NOT EXISTS verkeersbesluiten;\n\nDO $$\nBEGIN\n    IF NOT EXISTS (\n        SELECT FROM information_schema.tables \n        WHERE  table_schema = 'verkeersbesluiten'\n        AND    table_name   = 'verkeersai'\n    ) THEN\n        EXECUTE $stmt$\n            CREATE TABLE verkeersbesluiten.verkeersai (\n                id text PRIMARY KEY,\n                gemeente text,\n                titel text,\n                bordcode text,\n                samenvatting text,\n                ai_samenvatting text,\n                available date,\n                original_image text,\n                georeferenced_image text,\n                geom_multipolygon geometry(MULTIPOLYGON),\n                geom_multilinestring geometry(MULTILINESTRING),\n                geom_multipoint geometry(MULTIPOINT, 28992)\n            );\n        $stmt$;\n\n        -- Create indexes\n        EXECUTE 'CREATE INDEX idx_geom_multilinestring ON verkeersbesluiten.verkeersai USING gist (geom_multilinestring)';\n        EXECUTE 'CREATE INDEX idx_geom_multipoint ON verkeersbesluiten.verkeersai USING gist (geom_multipoint)';\n        EXECUTE 'CREATE INDEX idx_geom_multipolygon ON verkeersbesluiten.verkeersai USING gist (geom_multipolygon)';\n    END IF;\nEND\n$$;",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1024,
+        1232,
         160
       ],
       "id": "c454916e-3e62-48be-9c23-4604504573e6",
@@ -596,6 +606,12 @@
               "type": "string"
             },
             {
+              "id": "ff80a288-d6ed-4b4b-8139-5ef9b6c78375",
+              "name": "bordcode",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.verkeersbordcode'] }}",
+              "type": "string"
+            },
+            {
               "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
               "name": "samenvatting",
               "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json.samenvatting }}",
@@ -622,7 +638,7 @@
             {
               "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
               "name": "image",
-              "value": "={{ $('HTTP Request').item.json.images[0].includes('pdf') ? 'http://koop-api-service:8000' + $('HTTP Request').item.json.images[0] :  $('HTTP Request').item.json.images[0]}}",
+              "value": "={{ $('HTTP Request').item.json.images[0].includes('bijlage') ? 'http://localhost:8001/' + $('HTTP Request').item.json.images[0] :  $('HTTP Request').item.json.images[0]}}",
               "type": "string"
             },
             {
@@ -644,7 +660,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4496,
+        4704,
         304
       ],
       "id": "3d2e9c4f-6ca6-4f60-b931-5faf87eb922c",
@@ -685,6 +701,12 @@
               "id": "23f59378-3393-4a59-9cd8-61479a85af85",
               "name": "titel",
               "value": "={{ $('HTTP Request').item.json.metadata['DCTERMS.alternative'] }}",
+              "type": "string"
+            },
+            {
+              "id": "c031492b-649f-459d-985b-b5a7c5850f56",
+              "name": "bordcode",
+              "value": "",
               "type": "string"
             },
             {
@@ -736,7 +758,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2192,
+        2400,
         688
       ],
       "id": "5718d64e-ad30-47f9-bdc1-ba866189a4cc",
@@ -756,6 +778,12 @@
               "id": "edab0384-2aba-4f70-8341-5def045738e3",
               "name": "gemeente",
               "value": "={{ $('HTTP Request').item.json.metadata['DC.creator'] }}",
+              "type": "string"
+            },
+            {
+              "id": "eb6a3c8c-920c-4bd6-ac85-d01df5990018",
+              "name": "bordcode",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.verkeersbordcode'] }}",
               "type": "string"
             },
             {
@@ -813,7 +841,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3200,
+        3408,
         272
       ],
       "id": "77642e7e-6ea3-4b4a-a8b1-2eab467f42dd",
@@ -821,7 +849,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json.body;\n\nconst startDate = new Date(input.start_date);\nconst endDate = new Date(input.end_date);\n\nconst bordcodes = input.bordcode_categories || null;\nconst provinces = input.provinces || null;\nconst gemeenten = input.gemeenten || null;\n\n// Helper to build query string from optional arrays\nfunction toQueryParam(key, value) {\n  if (!value || !Array.isArray(value) || value.length === 0) return null;\n  return `${encodeURIComponent(key)}=${encodeURIComponent(value.join(','))}`;\n}\n\nconst result = [];\n\nfor (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {\n  const dateStr = d.toISOString().split('T')[0];\n\n  const queryParts = [];\n\n  const bordParam = toQueryParam('bordcode_categories', bordcodes);\n  const provParam = toQueryParam('provinces', provinces);\n  const gemParam = toQueryParam('gemeenten', gemeenten);\n\n  if (bordParam) queryParts.push(bordParam);\n  if (provParam) queryParts.push(provParam);\n  if (gemParam) queryParts.push(gemParam);\n\n  const queryString = queryParts.join('&');\n\n  result.push({\n    json: {\n      date: dateStr,\n      query: queryString,\n    }\n  });\n}\n\nreturn result;"
+        "jsCode": "const input = $input.first().json.body;\n\nconst startDate = new Date(input.start_date);\nconst endDate = new Date(input.end_date);\n\nconst bordcodes = input.bordcode_categories || null;\nconst provinces = input.provinces || null;\nconst gemeenten = input.gemeenten || null;\n\n// Helper: maak van een array meerdere key=value entries\nfunction toQueryParams(key, arr) {\n  if (!Array.isArray(arr) || arr.length === 0) return [];\n  return arr.map(v => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`);\n}\n\nconst result = [];\n\nfor (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {\n  const dateStr = d.toISOString().split('T')[0];\n\n  const queryParts = [];\n  queryParts.push(...toQueryParams('bordcode_categories', bordcodes));\n  queryParts.push(...toQueryParams('provinces', provinces));\n  queryParts.push(...toQueryParams('gemeenten', gemeenten));\n\n  const queryString = queryParts.join('&');\n\n  result.push({\n    json: {\n      date: dateStr,\n      query: queryString,\n    }\n  });\n}\n\nreturn result;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -857,7 +885,7 @@
       "type": "n8n-nodes-base.editImage",
       "typeVersion": 1,
       "position": [
-        2096,
+        2304,
         0
       ],
       "id": "3dd760bb-0ee7-4f71-ac3f-be39807a680c",
@@ -930,6 +958,12 @@
               "type": "string"
             },
             {
+              "id": "c5952f11-d5b2-4650-97b5-4dd852d28e21",
+              "name": "bordcode",
+              "value": "={{ $('HTTP Request').item.json.metadata['OVERHEIDop.verkeersbordcode'] }}",
+              "type": "string"
+            },
+            {
               "id": "c5c6af05-37f9-430a-8069-182681c3eef5",
               "name": "samenvatting",
               "value": "={{ $('set up relevant fields, including \\'AI Summary\\'').item.json.samenvatting }}",
@@ -956,7 +990,7 @@
             {
               "id": "e4f95667-197c-4555-a538-41b5e9f0dad5",
               "name": "image",
-              "value": "={{ $('HTTP Request').item.json.images[0].includes('pdf') ? 'http://koop-api-service:8000' + $('HTTP Request').item.json.images[0] :  $('HTTP Request').item.json.images[0]}}",
+              "value": "={{ $('HTTP Request').item.json.images[0].includes('bijlage') ? 'http://localhost:8001/' + $('HTTP Request').item.json.images[0] :  $('HTTP Request').item.json.images[0]}}",
               "type": "string"
             },
             {
@@ -978,7 +1012,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3968,
+        4176,
         272
       ],
       "id": "062f0863-d132-487a-afe2-957d5df07b79",
@@ -1012,11 +1046,25 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3760,
+        3968,
         128
       ],
       "id": "795a20c6-e7ee-4742-b515-8f95edb2474c",
       "name": "if match is found"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Take tekst from previous noce\nconst input = $json.output.samenvatting || ''; // \n\n// Regex: verwijdert alles behalve letters, cijfers, spaties en nieuwe regels\nconst cleaned = input.replace(/[^\\p{L}\\p{N}\\s]/gu, '');\n\nreturn {\n  output: {\n    samenvatting: cleaned\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1056,
+        688
+      ],
+      "id": "3b3700df-c9a2-4633-beaa-145c278461b1",
+      "name": "Code1"
     }
   ],
   "pinData": {},
@@ -1086,7 +1134,7 @@
       "main": [
         [
           {
-            "node": "set up relevant fields, including 'AI Summary'",
+            "node": "Code1",
             "type": "main",
             "index": 0
           }
@@ -1382,13 +1430,24 @@
           }
         ]
       ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "set up relevant fields, including 'AI Summary'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "3d579465-760b-428c-abac-d7445be29116",
+  "versionId": "978d8a6a-9756-4d58-b89d-6fe3d3dd6d19",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"

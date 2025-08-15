@@ -13,10 +13,16 @@ import logging
 class BordcodeCategory(str, Enum):
     """Valid bordcode categories for filtering."""
     A = "A"
+    B = "B"
     C = "C" 
     D = "D"
+    E = "E"
     F = "F"
     G = "G"
+    H = "H"
+    J = "J"
+    K = "K"
+    L = "L"
 
 
 class Province(str, Enum):

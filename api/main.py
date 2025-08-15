@@ -28,11 +28,11 @@ async def root():
 
 @app.post("/trigger-n8n-workflow")
 async def trigger_n8n_workflow(
-    start_date: date = Query(..., description="The start date from which traffic decrees should be processed."),
-    end_date: date = Query(..., description="The end date until which traffic decrees should be processed."),
+    start_date: date = Query(..., description="The start date from which traffic decrees should be processed in YYYY-MM-DD format."),
+    end_date: date = Query(..., description="The end date until which traffic decrees should be processed in YYYY-MM-DD format."),
     bordcode_categories: Optional[str] = Query(
         None, 
-        description="Filter by bordcode categories. Use comma-separated values: 'A,C,D, F, G' or 'A, C, D, F, G'"
+        description="Filter by bordcode categories. Input must be one of the following values: 'A, B, C, D, E, F, J, K, L'"
     ),
     provinces: Optional[str] = Query(
         None, 
@@ -44,7 +44,21 @@ async def trigger_n8n_workflow(
     )
 ):
     """
-    Receives parameters and forwards them to an N8N webhook that starts the traffic decree workflow.
+    Starts the N8N workflow to process traffic decisions for a given date range with optional filtering.
+    Resulting besluiten are stored in the postgres database.
+    You can follow the progress of the workflow in the n8n web interface.
+    
+    Args:
+        start_date_str: Start date in YYYY-MM-DD format
+        end_date_str: End date in YYYY-MM-DD format  
+        bordcode_categories: Optional list of bordcode categories (A, B, C, D, E, F, J, K, L). 
+                           Includes decisions if metadata contains ANY of these letters.
+        provinces: Optional list of Dutch provinces (case-insensitive)
+        gemeenten: Optional list of municipalities (case-insensitive)
+        
+    Important: 
+        If you set the name of a province, it will only return besluiten from the province, not the municipalities in that province.
+        If you set the name of a municipality, it will only return besluiten from the municipality, not the province.
     """
 
 
@@ -67,7 +81,7 @@ async def trigger_n8n_workflow(
             except ValueError:
                 raise HTTPException(
                     status_code=400,
-                    detail=f"Invalid bordcode category: '{cat}'. Valid values are: A, C, D, F, G"
+                    detail=f"Invalid bordcode category: '{cat}'. Valid values are: A, B, C, D, E, F, G, H, J, K, L"
                 )
         payload_data["bordcode_categories"] = valid_categories
     

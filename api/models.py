@@ -10,10 +10,16 @@ from typing import List, Optional
 class BordcodeCategory(str, Enum):
     """Valid bordcode categories for filtering traffic decrees (case-insensitive)"""
     A = "A"
+    B = "B"
     C = "C"
     D = "D"
+    E = "E"
     F = "F"
     G = "G"
+    H = "H"
+    J = "J"
+    K = "K"
+    L = "L"
 
     @classmethod
     def _missing_(cls, value):

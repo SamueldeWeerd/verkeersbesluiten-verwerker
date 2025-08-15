@@ -89,7 +89,7 @@
 - **Output**: Robust correspondences for complex aerial imagery
 
 ### 4. **Ollama Local LLM** (N8N Workflows)
-- **Model**: Llama 3.2 3B (locally hosted)
+- **Model**: Llama 3.2 7B (locally hosted)
 - **Purpose**: Text processing, metadata extraction, workflow decisions
 - **Input**: Traffic decree text content, processing instructions
 - **Output**: Structured data, workflow routing decisions

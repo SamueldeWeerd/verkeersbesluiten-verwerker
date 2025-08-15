@@ -26,7 +26,7 @@ async def get_besluiten_by_date(
     Args:
         start_date_str: Start date in YYYY-MM-DD format
         end_date_str: End date in YYYY-MM-DD format  
-        bordcode_categories: Optional list of bordcode categories (A, C, D, F, G). 
+        bordcode_categories: Optional list of bordcode categories (A, B, C, D, E, F, G, H, J, K, L). 
                            Includes decisions if metadata contains ANY of these letters.
         provinces: Optional list of Dutch provinces (case-insensitive)
         gemeenten: Optional list of municipalities (case-insensitive)
@@ -34,11 +34,9 @@ async def get_besluiten_by_date(
     Returns:
         List of processed verkeersbesluit data including metadata, text, and image URLs
         
-    Examples:
-        - `/besluiten/2024-01-01/2024-01-02?bordcode_categories=A&bordcode_categories=C`
-        - `/besluiten/2024-01-01/2024-01-02?provinces=utrecht&provinces=gelderland`
-        - `/besluiten/2024-01-01/2024-01-02?gemeenten=amsterdam&gemeenten=rotterdam`
-        - `/besluiten/2024-01-01/2024-01-02?bordcode_categories=A&provinces=utrecht&gemeenten=amsterdam`
+    Important: 
+        If you set the name of a province, it will only return besluiten from the province, not the municipalities in that province.
+        If you set the name of a municipality, it will only return besluiten from the municipality, not the province.
     """
     try:
         # Pass filters directly to service for early filtering (before image processing)

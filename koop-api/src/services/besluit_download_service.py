@@ -252,8 +252,8 @@ class BesluitService:
                 relative_path = f"afbeeldingen/{output_filename}"
                 image_url = f"{self._settings.api.external_base_url}/{relative_path}"
                 
-                logging.info(f"✅ Saved first page (map/aerial photo): {image_url}")
-                return image_url
+                logging.info(f"✅ Saved first page (map/aerial photo): {relative_path}")
+                return relative_path
                 
             except Exception as e:
                 logging.warning(f"⚠️ Error saving image: {e}")

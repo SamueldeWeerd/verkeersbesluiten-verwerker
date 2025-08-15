@@ -1,5 +1,5 @@
 from typing import List, Optional
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel, Field
 
 class GebiedsMarkeringModel(BaseModel):
     """Model for geographical area markings in a verkeersbesluit."""
@@ -47,9 +47,9 @@ class VerkeersBesluitResponse(BaseModel):
     id: str = Field(..., description="Unique identifier of the verkeersbesluit")
     text: str = Field(..., description="Full text content of the verkeersbesluit")
     metadata: VerkeersBesluitMetadata = Field(..., description="Metadata of the verkeersbesluit")
-    images: List[HttpUrl] = Field(
+    images: List[str] = Field(
         default_factory=list,
-        description="List of URLs to associated images (maps, aerial photos)"
+        description="List of URLs or relative paths to associated images (maps, aerial photos)"
     )
 
     class Config:
@@ -72,8 +72,8 @@ class VerkeersBesluitResponse(BaseModel):
                     "exb_code": "exb-2024-67890"
                 },
                 "images": [
-                    "http://example.com/images/map1.png",
-                    "http://example.com/images/aerial1.jpg"
+                    "afbeeldingen/gmb-2024-12345_page_1_bijlage.png",
+                    "https://zoek.officielebekendmakingen.nl/gmb-2024-12345-1.png"
                 ]
             }
         }
