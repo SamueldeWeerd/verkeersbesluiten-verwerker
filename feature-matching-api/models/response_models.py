@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Any
 from datetime import datetime
 from enum import Enum
+import numpy as np
 
 
 class QualityStatus(str, Enum):
@@ -30,6 +31,18 @@ class FeatureMatchingProcessingInfo:
     overlay_transparency: float
     georeferenced: bool
     pgw_provided: bool
+
+
+@dataclass
+class FeatureMatchingResult:
+    """Container for feature matching results."""
+    success: bool
+    warped_overlay: Optional[np.ndarray] = None
+    warped_source: Optional[np.ndarray] = None
+    homography: Optional[np.ndarray] = None
+    matches_count: int = 0
+    inlier_ratio: float = 0.0
+    error_message: str = ""
 
 
 @dataclass

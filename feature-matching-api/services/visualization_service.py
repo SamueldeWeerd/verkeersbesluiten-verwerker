@@ -262,7 +262,7 @@ class VisualizationService:
             return "Fair"
         else:
             return "Poor"
-    
+
     def create_overlay_visualization(
         self,
         src_img: np.ndarray,
@@ -273,39 +273,63 @@ class VisualizationService:
     ) -> Dict[str, Any]:
         """
         Create warped overlay visualization.
-        
-        Args:
-            src_img: Source image
-            dst_img: Destination image
-            homography: Homography matrix
-            alpha: Transparency factor
-            scale_factor: Scale factor for canvas sizing
-            
-        Returns:
-            Dictionary with overlay results
+
+        Ensures the warped_canvas includes the entire homography-warped source image,
+        even if the destination only partially overlaps it.
         """
         try:
             height, width = dst_img.shape[:2]
-            
-            # Create canvas with padding
-            padding = 800
-            canvas_width = width + 2 * padding
-            canvas_height = height + 2 * padding
-            
-            # Calculate destination offset in canvas
-            dst_x_offset = padding
-            dst_y_offset = padding
+            src_h, src_w = src_img.shape[:2]
+
+            # --- CHANGES START: compute a canvas that fits both warped source and destination ---
+            # Transform source corners by H to know where they land
+            src_corners = np.array([[0, 0],
+                                    [src_w - 1, 0],
+                                    [src_w - 1, src_h - 1],
+                                    [0, src_h - 1]], dtype=np.float32).reshape(1, 4, 2)
+            warped_corners = cv2.perspectiveTransform(src_corners, homography)[0]  # (4,2)
+
+            # Destination rectangle corners
+            dst_corners = np.array([[0, 0],
+                                    [width, 0],
+                                    [width, height],
+                                    [0, height]], dtype=np.float32)
+
+            # Union bounds
+            all_pts = np.vstack([warped_corners, dst_corners])
+            min_x = float(np.floor(all_pts[:, 0].min()))
+            min_y = float(np.floor(all_pts[:, 1].min()))
+            max_x = float(np.ceil(all_pts[:, 0].max()))
+            max_y = float(np.ceil(all_pts[:, 1].max()))
+
+            # Small padding margin (optional)
+            pad = 20
+            min_x -= pad
+            min_y -= pad
+            max_x += pad
+            max_y += pad
+
+            # Translation to make all coordinates non-negative
+            dst_x_offset = int(np.round(-min_x))
+            dst_y_offset = int(np.round(-min_y))
             canvas_to_dest_offset = (dst_x_offset, dst_y_offset)
-            
+
+            # Canvas size
+            canvas_width = int(np.ceil(max_x - min_x))
+            canvas_height = int(np.ceil(max_y - min_y))
+            canvas_width = max(canvas_width, 1)
+            canvas_height = max(canvas_height, 1)
+            # --- CHANGES END ---
+
             # Create translation matrix
             translation = np.array([[1, 0, dst_x_offset],
-                                   [0, 1, dst_y_offset],
-                                   [0, 0, 1]], dtype=np.float32)
-            
+                                    [0, 1, dst_y_offset],
+                                    [0, 0, 1]], dtype=np.float32)
+
             # Combine translation with homography
             adjusted_homography = translation @ homography
-            
-            # Create warped image
+
+            # Create warped image (now guaranteed to hold the full warped source)
             warped_canvas = cv2.warpPerspective(
                 src_img,
                 adjusted_homography,
@@ -314,36 +338,122 @@ class VisualizationService:
                 borderMode=cv2.BORDER_CONSTANT,
                 borderValue=0
             )
-            
-            # Create overlay result
+
+            # Create overlay result (unchanged logic)
             overlay_result = dst_img.copy()
-            
+
             # Extract destination region from warped canvas
-            dest_region = warped_canvas[dst_y_offset:dst_y_offset+height, 
-                                       dst_x_offset:dst_x_offset+width]
-            
-            # Create mask for valid pixels
-            mask = cv2.cvtColor(dest_region, cv2.COLOR_BGR2GRAY)
-            mask = (mask > 0).astype(np.uint8) * 255
-            
-            # Apply overlay where we have warped content
-            if dest_region.shape[:2] == overlay_result.shape[:2]:
-                mask_indices = mask > 0
-                if np.any(mask_indices):
-                    dst_pixels = overlay_result[mask_indices].astype(np.float32)
-                    src_pixels = dest_region[mask_indices].astype(np.float32)
-                    
-                    if dst_pixels.shape == src_pixels.shape:
-                        blended_pixels = (dst_pixels * (1 - alpha) + src_pixels * alpha).astype(np.uint8)
-                        overlay_result[mask_indices] = blended_pixels
-            
+            dest_region = warped_canvas[dst_y_offset:dst_y_offset + height,
+                                        dst_x_offset:dst_x_offset + width]
+
+            # Create mask for valid pixels (unchanged logic)
+            if dest_region.size > 0:
+                mask = cv2.cvtColor(dest_region, cv2.COLOR_BGR2GRAY)
+                mask = (mask > 0).astype(np.uint8) * 255
+
+                # Apply overlay where we have warped content
+                if dest_region.shape[:2] == overlay_result.shape[:2]:
+                    mask_indices = mask > 0
+                    if np.any(mask_indices):
+                        dst_pixels = overlay_result[mask_indices].astype(np.float32)
+                        src_pixels = dest_region[mask_indices].astype(np.float32)
+
+                        if dst_pixels.shape == src_pixels.shape:
+                            blended_pixels = (dst_pixels * (1 - alpha) + src_pixels * alpha).astype(np.uint8)
+                            overlay_result[mask_indices] = blended_pixels
+
             return {
                 "success": True,
                 "overlay_result": overlay_result,
                 "warped_canvas": warped_canvas,
                 "canvas_to_dest_offset": canvas_to_dest_offset
             }
-            
+
         except Exception as e:
             logger.error(f"Error creating overlay visualization: {str(e)}")
             return {"success": False, "error": str(e)}
+    
+    # def create_overlay_visualization(
+    #     self,
+    #     src_img: np.ndarray,
+    #     dst_img: np.ndarray,
+    #     homography: np.ndarray,
+    #     alpha: float = 0.6,
+    #     scale_factor: float = 1.0
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Create warped overlay visualization.
+        
+    #     Args:
+    #         src_img: Source image
+    #         dst_img: Destination image
+    #         homography: Homography matrix
+    #         alpha: Transparency factor
+    #         scale_factor: Scale factor for canvas sizing
+            
+    #     Returns:
+    #         Dictionary with overlay results
+    #     """
+    #     try:
+    #         height, width = dst_img.shape[:2]
+            
+    #         # Create canvas with padding
+    #         padding = 800
+    #         canvas_width = width + 2 * padding
+    #         canvas_height = height + 2 * padding
+            
+    #         # Calculate destination offset in canvas
+    #         dst_x_offset = padding
+    #         dst_y_offset = padding
+    #         canvas_to_dest_offset = (dst_x_offset, dst_y_offset)
+            
+    #         # Create translation matrix
+    #         translation = np.array([[1, 0, dst_x_offset],
+    #                                [0, 1, dst_y_offset],
+    #                                [0, 0, 1]], dtype=np.float32)
+            
+    #         # Combine translation with homography
+    #         adjusted_homography = translation @ homography
+            
+    #         # Create warped image
+    #         warped_canvas = cv2.warpPerspective(
+    #             src_img,
+    #             adjusted_homography,
+    #             (canvas_width, canvas_height),
+    #             flags=cv2.INTER_LINEAR,
+    #             borderMode=cv2.BORDER_CONSTANT,
+    #             borderValue=0
+    #         )
+            
+    #         # Create overlay result
+    #         overlay_result = dst_img.copy()
+            
+    #         # Extract destination region from warped canvas
+    #         dest_region = warped_canvas[dst_y_offset:dst_y_offset+height, 
+    #                                    dst_x_offset:dst_x_offset+width]
+            
+    #         # Create mask for valid pixels
+    #         mask = cv2.cvtColor(dest_region, cv2.COLOR_BGR2GRAY)
+    #         mask = (mask > 0).astype(np.uint8) * 255
+            
+    #         # Apply overlay where we have warped content
+    #         if dest_region.shape[:2] == overlay_result.shape[:2]:
+    #             mask_indices = mask > 0
+    #             if np.any(mask_indices):
+    #                 dst_pixels = overlay_result[mask_indices].astype(np.float32)
+    #                 src_pixels = dest_region[mask_indices].astype(np.float32)
+                    
+    #                 if dst_pixels.shape == src_pixels.shape:
+    #                     blended_pixels = (dst_pixels * (1 - alpha) + src_pixels * alpha).astype(np.uint8)
+    #                     overlay_result[mask_indices] = blended_pixels
+            
+    #         return {
+    #             "success": True,
+    #             "overlay_result": overlay_result,
+    #             "warped_canvas": warped_canvas,
+    #             "canvas_to_dest_offset": canvas_to_dest_offset
+    #         }
+            
+    #     except Exception as e:
+    #         logger.error(f"Error creating overlay visualization: {str(e)}")
+    #         return {"success": False, "error": str(e)}

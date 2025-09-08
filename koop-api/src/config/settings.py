@@ -95,11 +95,11 @@ class Settings(BaseSettings):
     logging: LoggingSettings = LoggingSettings()
     # TODO: Add more keywords to exclude
     exclude_keywords: List[str] = [
-        # "parkeerplaats", "laadpaal", "gehandicapt", "oplaadpunt",
-        # "parkeerverbod", "parkeervergunning", "parkeerregime",
-        # "parkeermogelijkheden", "parkeervoorzieningen",
-        # "parkeersituatie", "parkeersituaties", "parkeerplaatsen",
-        # "parkeerplaatsvoorzieningen"
+        "parkeerplaats", "laadpaal", "gehandicapt", "oplaadpunt",
+        "parkeerverbod", "parkeervergunning", "parkeerregime",
+        "parkeermogelijkheden", "parkeervoorzieningen",
+        "parkeersituatie", "parkeersituaties", "parkeerplaatsen",
+        "parkeerplaatsvoorzieningen"
     ]
     query_template: str = """(c.product-area==officielepublicaties AND 
         dt.modified>={date_start} AND dt.modified<={date_end} AND 

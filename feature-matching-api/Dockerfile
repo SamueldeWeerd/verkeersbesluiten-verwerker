@@ -58,6 +58,7 @@ COPY memory_config.py .
 COPY services/ ./services/
 COPY utils/ ./utils/
 COPY models/ ./models/
+COPY matchers/ ./matchers/
 
 # Copy third party components
 COPY third_party/ ./third_party/

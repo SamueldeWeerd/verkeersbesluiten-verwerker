@@ -12,10 +12,10 @@
 ### Setup Steps
 1. **Clone Repository**:
    - download ZIP file from https://github.com/SamueldeWeerd/traffic-decree-processing-model.git
-   ![GitHub Download Process](./assets/github_download.png)
+   <img src="./assets/github_download.png" width="400" alt="GitHub Download Process"/>
    - unpack zip file
    - open terminal in directory
-   ![Terminal Commands](./assets/terminal.png)
+   <img src="./assets/terminal.png" width="400" alt="Terminal Commands"/>
 
 
 2. **Copy Configuration File**:
@@ -96,7 +96,7 @@
 
 ## Processing Pipeline Flow
 
-![Complete Workflow Process](./assets/workflow.png)
+<img src="./assets/workflow.png" width="600" alt="Complete Workflow Process"/>
 
 ```
 Government APIs → KOOP API → Traffic Decree Data + Images
@@ -222,7 +222,7 @@ curl -X POST "http://localhost:8000/trigger-n8n-workflow?start_date=2024-05-24&e
 - **Ollama Integration**: Uses local LLM for text processing
 - **Result Aggregation**: Combines and formats final outputs
 
-![Workflow Import Process](./assets/edit_workflow.png)
+<img src="./assets/edit_workflow.png" width="500" alt="Workflow Import Process"/>
 
 ## Processing Workflow
 
