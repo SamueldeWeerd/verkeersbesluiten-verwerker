@@ -59,6 +59,7 @@ class GeoreferencingService:
         try:
             logger.info("Starting georeferencing process")
             logger.info(f"Destination resize factor: {dest_resize_factor:.3f}")
+        
             
             # Load original destination image dimensions
             original_dest_img = cv2.imread(dest_image_path)

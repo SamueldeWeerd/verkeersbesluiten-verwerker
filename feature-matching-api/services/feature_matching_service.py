@@ -92,6 +92,7 @@ class FeatureMatchingService:
             matcher_type = self.select_matcher_for_map_type(map_type)
             logger.info(f"Selected matcher type: {matcher_type}")
             
+
             if matcher_type == 'aerial':
                 # DEBUG: Check coordinate transformations BEFORE ROMA
                 from services.coordinate_transformation_service import CoordinateTransformationService
@@ -99,6 +100,8 @@ class FeatureMatchingService:
                 logger.info(f"DEBUG: Coordinate transformations available BEFORE ROMA: {coord_service_before.is_available()}")
                 
                 matcher = AerialImageryMatcher()
+                # Log parameters for roma matcher
+                logger.info(f"ROMA matcher parameters: {matcher.roma_model.conf}")
                 kp1, kp2, matches, detector_name = matcher.roma_match_both_images(source_img, destination_img)
                 
                 # DEBUG: Check coordinate transformations AFTER ROMA

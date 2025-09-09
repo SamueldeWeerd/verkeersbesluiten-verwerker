@@ -40,7 +40,7 @@ class FeatureMatchingConfig:
         else:
             # Increase CPU values significantly for better matching accuracy
             # Scale based on CPU power - more cores = can handle larger images
-            base_size = 560 if self.cpu_cores < 8 else (700 if self.cpu_cores < 12 else 840)
+            base_size = 350 if self.cpu_cores < 8 else (700 if self.cpu_cores < 12 else 840)
             base_keypoints = 1000 if self.cpu_cores < 8 else (1500 if self.cpu_cores < 12 else 2000)
 
         self.roma_max_image_size = self._get_int_env("ROMA_MAX_IMAGE_SIZE", base_size)
