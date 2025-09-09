@@ -18,7 +18,8 @@ async def get_besluiten_by_date(
     end_date_str: str = Path(..., description="Date in YYYY-MM-DD format", regex=r"^\d{4}-\d{2}-\d{2}$"),
     bordcode_categories: Optional[List[BordcodeCategory]] = Query(None, description="Filter by bordcode categories (A, C, D, F, G). Include if metadata contains ANY of these letters."),
     provinces: Optional[List[str]] = Query(None, description="Filter by Dutch provinces (case-insensitive). Valid values: drenthe, flevoland, friesland, gelderland, groningen, limburg, noord-brabant, noord-holland, overijssel, utrecht, zeeland, zuid-holland"),
-    gemeenten: Optional[List[str]] = Query(None, description="Filter by municipalities (case-insensitive). Include decisions from these specific municipalities.")
+    gemeenten: Optional[List[str]] = Query(None, description="Filter by municipalities (case-insensitive). Include decisions from these specific municipalities."), 
+    exclude_keywords: Optional[List[str]] = Query(None, description="Exclude keywords from the search. Separate with commas.")
 ) -> List[VerkeersBesluitResponse]:
     """
     Retrieves all traffic decisions for a given date range with optional filtering.
@@ -45,7 +46,8 @@ async def get_besluiten_by_date(
             end_date_str=end_date_str,
             bordcode_categories=bordcode_categories,
             provinces=provinces,
-            gemeenten=gemeenten
+            gemeenten=gemeenten,
+            exclude_keywords=exclude_keywords
         )
         
         return results

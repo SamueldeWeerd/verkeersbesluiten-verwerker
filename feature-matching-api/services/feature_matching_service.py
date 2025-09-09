@@ -100,8 +100,13 @@ class FeatureMatchingService:
                 logger.info(f"DEBUG: Coordinate transformations available BEFORE ROMA: {coord_service_before.is_available()}")
                 
                 matcher = AerialImageryMatcher()
-                # Log parameters for roma matcher
-                logger.info(f"ROMA matcher parameters: {matcher.roma_model.conf}")
+                # Log ROMA matcher status
+                if matcher.roma_available:
+                    logger.info("✅ ROMA matcher initialized successfully")
+                else:
+                    logger.error("❌ ROMA matcher initialization failed")
+                    return FeatureMatchingResult(success=False, error_message="ROMA matcher not available for aerial imagery")
+                
                 kp1, kp2, matches, detector_name = matcher.roma_match_both_images(source_img, destination_img)
                 
                 # DEBUG: Check coordinate transformations AFTER ROMA

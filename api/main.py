@@ -41,6 +41,10 @@ async def trigger_n8n_workflow(
     gemeenten: Optional[str] = Query(
         None, 
         description="Filter by municipalities. Use comma-separated values: 'amsterdam,rotterdam' or 'amsterdam, rotterdam'"
+    ), 
+    exclude_keywords: Optional[str] = Query(
+        None, 
+        description="Exclude keywords from the search. Use comma-separated values: 'parkeerplaats,laadpaal' or 'parkeerplaats, laadpaal'"
     )
 ):
     """
@@ -106,6 +110,11 @@ async def trigger_n8n_workflow(
         # Split by comma and clean up whitespace (no validation needed for gemeente names)
         gemeente_list = [gem.strip().lower() for gem in gemeenten.split(",") if gem.strip()]
         payload_data["gemeenten"] = gemeente_list
+    
+    if exclude_keywords:
+        # Split by comma and clean up whitespace
+        exclude_keywords_list = [keyword.strip().lower() for keyword in exclude_keywords.split(",") if keyword.strip()]
+        payload_data["exclude_keywords"] = exclude_keywords_list
 
     async with httpx.AsyncClient() as client:
         try:

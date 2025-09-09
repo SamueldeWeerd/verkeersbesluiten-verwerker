@@ -93,19 +93,19 @@ class Settings(BaseSettings):
     rate_limit: RateLimitSettings = RateLimitSettings()
     file: FileSettings = FileSettings()
     logging: LoggingSettings = LoggingSettings()
-    # TODO: Add more keywords to exclude
-    exclude_keywords: List[str] = [
-        "parkeerplaats", "laadpaal", "gehandicapt", "oplaadpunt",
-        "parkeerverbod", "parkeervergunning", "parkeerregime",
-        "parkeermogelijkheden", "parkeervoorzieningen",
-        "parkeersituatie", "parkeersituaties", "parkeerplaatsen",
-        "parkeerplaatsvoorzieningen"
-    ]
+    # # TODO: Add more keywords to exclude
+    # exclude_keywords: List[str] = [
+    #     "parkeerplaats", "laadpaal", "gehandicapt", "oplaadpunt",
+    #     "parkeerverbod", "parkeervergunning", "parkeerregime",
+    #     "parkeermogelijkheden", "parkeervoorzieningen",
+    #     "parkeersituatie", "parkeersituaties", "parkeerplaatsen",
+    #     "parkeerplaatsvoorzieningen"
+    # ]
+    # Note: Query is now built dynamically in the service to handle optional exclude_keywords
+    # This template is kept for reference but not used directly anymore
     query_template: str = """(c.product-area==officielepublicaties AND 
         dt.modified>={date_start} AND dt.modified<={date_end} AND 
-        dt.type = "verkeersbesluit " AND cql.allRecords =1 
-        NOT dt.title any "{exclude_keywords}" AND 
-        cql.allRecords=1 NOT dt.alternative any "{exclude_keywords}" )"""
+        dt.type = "verkeersbesluit " AND cql.allRecords =1)"""
 
     class Config:
         """Pydantic configuration."""

@@ -40,7 +40,8 @@ class BesluitService:
         end_date_str: str,
         bordcode_categories: Optional[List[BordcodeCategory]] = None,
         provinces: Optional[List[str]] = None,
-        gemeenten: Optional[List[str]] = None
+        gemeenten: Optional[List[str]] = None,
+        exclude_keywords: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
         """
         Fetches and processes verkeersbesluiten for a specific date with optional filtering.
@@ -52,6 +53,7 @@ class BesluitService:
             bordcode_categories: Optional bordcode categories filter
             provinces: Optional provinces filter
             gemeenten: Optional municipalities filter
+            exclude_keywords: Optional list of keywords to exclude from results
             
         Returns:
             List of processed verkeersbesluit data (already filtered)
@@ -64,11 +66,20 @@ class BesluitService:
             raise ValueError("Date must be in YYYY-MM-DD format (YYYY-MM-DD)")
         
         # Prepare SRU query
-        query = self._settings.query_template.format(
-            date_start=start_date_str,
-            date_end=end_date_str,
-            exclude_keywords=" ".join(self._settings.exclude_keywords)
-        )
+        # Build base query without exclude keywords
+        base_query = f"""(c.product-area==officielepublicaties AND 
+            dt.modified>={start_date_str} AND dt.modified<={end_date_str} AND 
+            dt.type = "verkeersbesluit " AND cql.allRecords =1"""
+        
+        # Add exclude keywords clause only if keywords are provided
+        if exclude_keywords:
+            exclude_keywords_str = " ".join(exclude_keywords)
+            exclusion_clause = f""" 
+            NOT dt.title any "{exclude_keywords_str}" AND 
+            cql.allRecords=1 NOT dt.alternative any "{exclude_keywords_str}\""""
+            query = base_query + exclusion_clause + " )"
+        else:
+            query = base_query + " )"
         
         # Make SRU request
         params = {
@@ -78,9 +89,21 @@ class BesluitService:
             "maximumRecords": str(self._settings.sru.max_records_per_request)
         }
         
-        response = self._http_client.get(str(self._settings.sru.base_url), params=params)
-        if not response or not response.ok:
-            logging.warning(f"⚠️ Failed to get SRU data for {start_date_str} to {end_date_str}")
+        logging.info(f"🔍 Making SRU request to {self._settings.sru.base_url}")
+        logging.info(f"🔍 Query: {query}")
+        
+        try:
+            response = self._http_client.get(str(self._settings.sru.base_url), params=params)
+            logging.info(f"🔍 SRU Response status: {response.status_code if response else 'No response'}")
+            
+            if not response or not response.ok:
+                logging.warning(f"⚠️ Failed to get SRU data for {start_date_str} to {end_date_str}")
+                if response:
+                    logging.warning(f"⚠️ Response status: {response.status_code}")
+                    logging.warning(f"⚠️ Response content: {response.text[:500]}")
+                return []
+        except Exception as e:
+            logging.error(f"❌ Exception during SRU request: {str(e)}")
             return []
         
         # Parse response and extract records
@@ -121,11 +144,12 @@ class BesluitService:
             
             content = content_response.content.decode("utf-8", errors="ignore")
             
-            # Check exclusion keywords
-            excluded_keywords = [k for k in self._settings.exclude_keywords if k in content.lower()]
-            if excluded_keywords:
-                logging.info(f"🚫 {besluit_id}: Excluded (contains: {', '.join(excluded_keywords)})")
-                continue
+            # Check exclusion keywords (only if provided)
+            if exclude_keywords:
+                excluded_keywords = [k for k in exclude_keywords if k in content.lower()]
+                if excluded_keywords:
+                    logging.info(f"🚫 {besluit_id}: Excluded (contains: {', '.join(excluded_keywords)})")
+                    continue
             
             # Get metadata if available
             metadata = {}
