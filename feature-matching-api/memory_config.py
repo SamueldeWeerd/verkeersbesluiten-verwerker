@@ -34,14 +34,15 @@ class FeatureMatchingConfig:
         
         # Scale image sizes and keypoints based on GPU/CPU capabilities
         if self.has_gpu:
-            # GPU can handle larger images and more keypoints
-            base_size = 560  # Much larger for GPU
-            base_keypoints = 1000
+            # GPU can handle much larger images and more keypoints for better accuracy
+            base_size = 840  # Significantly larger for better matching
+            base_keypoints = 2000  # Much more keypoints for better accuracy
         else:
+            # Increase CPU values significantly for better matching accuracy
             # Scale based on CPU power - more cores = can handle larger images
-            base_size = 112 if self.cpu_cores < 8 else (196 if self.cpu_cores < 12 else 280)
-            base_keypoints = 100 if self.cpu_cores < 8 else (200 if self.cpu_cores < 12 else 300)
-            
+            base_size = 560 if self.cpu_cores < 8 else (700 if self.cpu_cores < 12 else 840)
+            base_keypoints = 1000 if self.cpu_cores < 8 else (1500 if self.cpu_cores < 12 else 2000)
+
         self.roma_max_image_size = self._get_int_env("ROMA_MAX_IMAGE_SIZE", base_size)
         self.roma_max_keypoints = self._get_int_env("ROMA_MAX_KEYPOINTS", base_keypoints)
         
@@ -49,8 +50,8 @@ class FeatureMatchingConfig:
         coarse_res = self._get_int_env("ROMA_COARSE_RES", self.roma_max_image_size)
         self.roma_coarse_res = (coarse_res, coarse_res)
         
-        # Upsample resolution (must be multiple of 14)
-        upsample_res = self._get_int_env("ROMA_UPSAMPLE_RES", min(self.roma_max_image_size + 56, 420))
+        # Upsample resolution (must be multiple of 14) - increased for better accuracy
+        upsample_res = self._get_int_env("ROMA_UPSAMPLE_RES", min(self.roma_max_image_size + 56, 896))  # Increased max from 420 to 896
         self.roma_upsample_res = (upsample_res, upsample_res)
         
         # Multi-processing settings for CPU optimization
