@@ -112,7 +112,7 @@
             },
             {
               "name": "image_url",
-              "value": "={{ $('check if besluit has images').item.json.images[0].replace('localhost:8001', 'koop-api-service:8000') }}"
+              "value": "={{\n  (() => {\n    const img = $('check if besluit has images').item.json.images[0];\n    if (img.includes('bijlage')) {\n      return `http://koop-api-service:8000/${img}`;\n    } else {\n      return img;\n    }\n  })()\n}}"
             },
             {
               "name": "traffic_decree_id",
@@ -359,7 +359,7 @@
             {
               "id": "3b193c53-81dc-4ad5-8bc1-eb16cce64572",
               "name": "bordcode",
-              "value": "={{ $json.bordcode }}",
+              "value": "={{ $json.bordcode || null }}",
               "type": "string"
             },
             {
@@ -440,15 +440,15 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO verkeersbesluiten.verkeersai (\n  id,\n  gemeente,\n  titel,\n  bordcode,\n  samenvatting,\n  ai_samenvatting,\n  available,\n  original_image,\n  georeferenced_image,\n  geom_multipolygon,\n  geom_multilinestring,\n  geom_multipoint\n)\nVALUES (\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6,\n  $7,\n  $8,\n  $9,\n  {{ $('extract relevant fields').item.json.geom_multipolygon ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipolygon}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multilinestring ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multilinestring}', 28992)` : 'NULL' }},\n  {{ $('extract relevant fields').item.json.geom_multipoint ? `ST_GeomFromText('${$('extract relevant fields').item.json.geom_multipoint}', 28992)` : 'NULL' }}\n)\nON CONFLICT (id) DO UPDATE SET\n  gemeente = EXCLUDED.gemeente,\n  titel = EXCLUDED.titel,\n  bordcode = EXCLUDED.bordcode,\n  samenvatting = EXCLUDED.samenvatting,\n  ai_samenvatting = EXCLUDED.ai_samenvatting,\n  available = EXCLUDED.available,\n  original_image = EXCLUDED.original_image,\n  georeferenced_image = EXCLUDED.georeferenced_image,\n  geom_multipolygon = EXCLUDED.geom_multipolygon,\n  geom_multilinestring = EXCLUDED.geom_multilinestring,\n  geom_multipoint = EXCLUDED.geom_multipoint;",
+        "query": "INSERT INTO verkeersbesluiten.verkeersai (\n  id,\n  gemeente,\n  titel,\n  bordcode,\n  samenvatting,\n  ai_samenvatting,\n  available,\n  original_image,\n  georeferenced_image,\n  geom_multipolygon,\n  geom_multilinestring,\n  geom_multipoint\n)\nVALUES (\n  $1, $2, $3, $4, $5, $6, $7, $8, $9,\n  CASE WHEN $10 IS NOT NULL THEN ST_GeomFromText($10, 28992) END,\n  CASE WHEN $11 IS NOT NULL THEN ST_GeomFromText($11, 28992) END,\n  CASE WHEN $12 IS NOT NULL THEN ST_GeomFromText($12, 28992) END\n)\nON CONFLICT (id) DO UPDATE SET\n  gemeente = EXCLUDED.gemeente,\n  titel = EXCLUDED.titel,\n  bordcode = EXCLUDED.bordcode,\n  samenvatting = EXCLUDED.samenvatting,\n  ai_samenvatting = EXCLUDED.ai_samenvatting,\n  available = EXCLUDED.available,\n  original_image = EXCLUDED.original_image,\n  georeferenced_image = EXCLUDED.georeferenced_image,\n  geom_multipolygon = EXCLUDED.geom_multipolygon,\n  geom_multilinestring = EXCLUDED.geom_multilinestring,\n  geom_multipoint = EXCLUDED.geom_multipoint;",
         "options": {
-          "queryReplacement": "=[   \"={{ $('extract relevant fields').item.json.id }}\",   \"={{ $('extract relevant fields').item.json.gemeente }}\",   \"={{ $('extract relevant fields').item.json.titel }}\",   \"={{ $('extract relevant fields').item.json.bordcode }}\",   \"={{ $('extract relevant fields').item.json.samenvatting }}\",   \"={{ $('extract relevant fields').item.json['ai-samenvatting'] }}\",   \"={{ $('extract relevant fields').item.json.beschikbaar }}\",   \"={{ $('extract relevant fields').item.json['original-image'] }}\",   \"={{ $('extract relevant fields').item.json['geotiff-url'] }}\" ]"
+          "queryReplacement": "={{$json.queryParameters}}"
         }
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1440,
+        1840,
         160
       ],
       "id": "db5c8565-4598-415f-ae42-28e5639303ba",
@@ -849,7 +849,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const input = $input.first().json.body;\n\nconst startDate = new Date(input.start_date);\nconst endDate = new Date(input.end_date);\n\nconst bordcodes = input.bordcode_categories || null;\nconst provinces = input.provinces || null;\nconst gemeenten = input.gemeenten || null;\n\n// Helper: maak van een array meerdere key=value entries\nfunction toQueryParams(key, arr) {\n  if (!Array.isArray(arr) || arr.length === 0) return [];\n  return arr.map(v => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`);\n}\n\nconst result = [];\n\nfor (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {\n  const dateStr = d.toISOString().split('T')[0];\n\n  const queryParts = [];\n  queryParts.push(...toQueryParams('bordcode_categories', bordcodes));\n  queryParts.push(...toQueryParams('provinces', provinces));\n  queryParts.push(...toQueryParams('gemeenten', gemeenten));\n\n  const queryString = queryParts.join('&');\n\n  result.push({\n    json: {\n      date: dateStr,\n      query: queryString,\n    }\n  });\n}\n\nreturn result;"
+        "jsCode": "const input = $input.first().json.body;\n\nconst startDate = new Date(input.start_date);\nconst endDate = new Date(input.end_date);\n\nconst bordcodes = input.bordcode_categories || null;\nconst provinces = input.provinces || null;\nconst gemeenten = input.gemeenten || null;\nconst exclude_keywords = input.exclude_keywords || null\n\n// Helper: maak van een array meerdere key=value entries\nfunction toQueryParams(key, arr) {\n  if (!Array.isArray(arr) || arr.length === 0) return [];\n  return arr.map(v => `${encodeURIComponent(key)}=${encodeURIComponent(v)}`);\n}\n\nconst result = [];\n\nfor (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {\n  const dateStr = d.toISOString().split('T')[0];\n\n  const queryParts = [];\n  queryParts.push(...toQueryParams('bordcode_categories', bordcodes));\n  queryParts.push(...toQueryParams('provinces', provinces));\n  queryParts.push(...toQueryParams('gemeenten', gemeenten));\n  queryParts.push(...toQueryParams('exclude_keywords', exclude_keywords));\n\n  const queryString = queryParts.join('&');\n\n  result.push({\n    json: {\n      date: dateStr,\n      query: queryString,\n    }\n  });\n}\n\nreturn result;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -1065,6 +1065,19 @@
       ],
       "id": "3b3700df-c9a2-4633-beaa-145c278461b1",
       "name": "Code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      queryParameters: [\n        $('extract relevant fields').first().json.id,\n        $('extract relevant fields').first().json.gemeente ?? null,\n        $('extract relevant fields').first().json.titel ?? null,\n        $('extract relevant fields').first().json.bordcode || null,\n        $('extract relevant fields').first().json.samenvatting ?? null,\n        $('extract relevant fields').first().json['ai-samenvatting'] ?? null,\n        $('extract relevant fields').first().json.beschikbaar ?? null,\n        $('extract relevant fields').first().json['original-image'] ?? null,\n        $('extract relevant fields').first().json['geotiff-url'] ?? null,\n        $('extract relevant fields').first().json.geom_multipolygon,\n        $('extract relevant fields').first().json.geom_multilinestring,\n        $('extract relevant fields').first().json.geom_multipoint,\n      ],\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        160
+      ],
+      "id": "cdacf82a-4d83-4731-a65d-8cd69b7c98c6",
+      "name": "Code2"
     }
   ],
   "pinData": {},
@@ -1377,7 +1390,7 @@
       "main": [
         [
           {
-            "node": "populate table in postgresdatabase",
+            "node": "Code2",
             "type": "main",
             "index": 0
           }
@@ -1441,13 +1454,24 @@
           }
         ]
       ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "populate table in postgresdatabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "978d8a6a-9756-4d58-b89d-6fe3d3dd6d19",
+  "versionId": "3f4b65ce-a08a-4889-9eb0-0ac2b4a0308b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"
