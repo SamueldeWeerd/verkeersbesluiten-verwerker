@@ -109,7 +109,8 @@ async def match_maps(
     destination_pgw: UploadFile = File(..., description="Optional PGW file for destination image georeferencing"),
     overlay_transparency: float = Form(0.6, description="Overlay transparency (0.0-1.0)"),
     output_format: str = Form("json", description="Output format: 'json' or 'files'"),
-    traffic_decree_id: str = Form(None, description="Optional traffic decree ID") 
+    traffic_decree_id: str = Form(None, description="Optional traffic decree ID"),
+    map_type: str = Form("schematic", description="Map type (choose between osm, bgt-achtergrond, bgt-omtrek, bgt-standaard, luchtfoto, brta, bag)")
 ):
     """Perform feature matching between two schematic maps with optional georeferencing."""
     
@@ -151,7 +152,8 @@ async def match_maps(
             source_image_path=source_path,
             destination_image_path=dest_path,
             output_dir=session_output_dir,
-            overlay_transparency=request_data.overlay_transparency
+            overlay_transparency=request_data.overlay_transparency, 
+            map_type=map_type
         )
         
         if not match_result["success"]:
@@ -207,7 +209,7 @@ async def match_maps(
 @app.post("/cut-out-georeferenced-map", response_model=dict)
 async def cut_osm_map_endpoint(
     geometry: str = Form(..., description="Geometry as GeoJSON, WKT, or coordinate list JSON string"),
-    map_type: str = Form("osm", description="Map type (see endpoint documentation for full list of supported types)"),
+    map_type: str = Form("osm", description="Map type (choose between osm, bgt-achtergrond, bgt-omtrek, bgt-standaard, luchtfoto, brta, bag)"),
     buffer: float = Form(800, description="Buffer distance in meters around the geometry"),
     output_format: str = Form("json", description="Output format: 'json' or 'files'"), 
     traffic_decree_id: str = Form(None, description="Optional traffic decree ID") 
@@ -298,7 +300,7 @@ async def cut_osm_map_endpoint(
 async def cutout_and_match(
     source_image: UploadFile = File(..., description="Source image to be warped and matched"),
     geometry: str = Form(..., description="Geometry as GeoJSON, WKT, or coordinate list JSON string for map cutting"),
-    map_type: str = Form(..., description="Map type (see endpoint documentation for full list of supported types)"),
+    map_type: str = Form(..., description="Map type (choose between osm, bgt-achtergrond, bgt-omtrek, bgt-standaard, luchtfoto, brta, bag)"),
     overlay_transparency: float = Form(0.6, description="Overlay transparency (0.0-1.0)"),
     output_format: str = Form("json", description="Output format: 'json' or 'files'"),
     traffic_decree_id: str = Form(None, description="Optional traffic decree ID") 
@@ -399,7 +401,7 @@ async def cutout_and_match(
 async def cutout_and_match_with_url(
     image_url: str = Form(..., description="URL of the source image to be warped and matched"),
     geometry: str = Form(..., description="Geometry as GeoJSON, WKT, or coordinate list JSON string for map cutting"),
-    map_type: str = Form(..., description="Map type (see endpoint documentation for full list of supported types)"),
+    map_type: str = Form(..., description="Map type (choose between osm, bgt-achtergrond, bgt-omtrek, bgt-standaard, luchtfoto, brta, bag)"),
     overlay_transparency: float = Form(0.6, description="Overlay transparency (0.0-1.0)"),
     output_format: str = Form("json", description="Output format: 'json' or 'files'"),
     traffic_decree_id: str = Form(None, description="Optional traffic decree ID") 

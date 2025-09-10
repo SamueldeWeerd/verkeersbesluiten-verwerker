@@ -94,10 +94,10 @@ services:
       # ROMA Configuration optimized for multi-core CPU - INCREASED FOR BETTER ACCURACY
       - ROMA_FORCE_CPU=${ROMA_FORCE_CPU:-true}
       - ROMA_MEMORY_EFFICIENT=${ROMA_MEMORY_EFFICIENT:-true}
-      - ROMA_MAX_IMAGE_SIZE=${ROMA_MAX_IMAGE_SIZE:-280}  # Increased from 196
+      - ROMA_MAX_IMAGE_SIZE=${ROMA_MAX_IMAGE_SIZE:-350}  # Increased from 196
       - ROMA_MAX_KEYPOINTS=${ROMA_MAX_KEYPOINTS:-200}   # Increased from 200
-      - ROMA_COARSE_RES=${ROMA_COARSE_RES:-280}          # Increased from 196
-      - ROMA_UPSAMPLE_RES=${ROMA_UPSAMPLE_RES:-336}      # Increased from 280
+      - ROMA_COARSE_RES=${ROMA_COARSE_RES:-350}          # Increased from 196
+      - ROMA_UPSAMPLE_RES=${ROMA_UPSAMPLE_RES:-406}      # Increased from 280
       # Multi-processing settings
       - ENABLE_MULTIPROCESSING=${ENABLE_MULTIPROCESSING:-true}
       - BATCH_SIZE=${BATCH_SIZE:-4}

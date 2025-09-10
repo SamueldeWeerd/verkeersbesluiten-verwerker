@@ -82,3 +82,29 @@ class AerialImageryMatcher:
         except Exception as e:
             logger.error(f"ROMA matching error: {e}")
             return [], [], [], "ROMA_FAILED"
+    
+    def cleanup(self):
+        """Clean up ROMA model and free memory."""
+        try:
+            if self.roma_model is not None:
+                # Clear ROMA model
+                del self.roma_model
+                self.roma_model = None
+                self.roma_available = False
+                
+                # Force garbage collection
+                import gc
+                gc.collect()
+                
+                # Clear PyTorch cache if available
+                import torch
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                
+                logger.info("🧹 ROMA matcher cleaned up successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Error during ROMA cleanup: {e}")
+    
+    def __del__(self):
+        """Ensure cleanup when object is destroyed."""
+        self.cleanup()

@@ -49,7 +49,8 @@ class FeatureMatchingService:
         destination_image_path: str,
         output_dir: Optional[str] = None,
         overlay_transparency: float = 0.6,
-        map_type: Optional[str] = None
+        map_type: Optional[str] = None,
+        reuse_matcher: Optional[object] = None
     ) -> FeatureMatchingResult:
         """
         Main feature matching function with modular architecture.
@@ -60,6 +61,7 @@ class FeatureMatchingService:
             output_dir: Optional output directory
             overlay_transparency: Overlay transparency
             map_type: Map type for coordinate system determination
+            reuse_matcher: Optional pre-created matcher to reuse (for performance)
             
         Returns:
             FeatureMatchingResult object
@@ -88,14 +90,23 @@ class FeatureMatchingService:
                 source_img, original_destination_img, buffer_factor=1.5
             )
             
-            # Select and use appropriate matcher
-            matcher_type = self.select_matcher_for_map_type(map_type)
-            logger.info(f"Selected matcher type: {matcher_type}")
+            # Import coordinate service (needed for debug logging)
+            from services.coordinate_transformation_service import CoordinateTransformationService
             
-
-            if matcher_type == 'aerial':
+            # Select and use appropriate matcher (reuse if provided)
+            matcher_type = self.select_matcher_for_map_type(map_type)
+            should_cleanup_matcher = False  # Track if we need to cleanup
+            
+            if reuse_matcher is not None:
+                # Use the provided matcher (for performance optimization)
+                matcher = reuse_matcher
+                logger.info(f"♻️ Reusing existing {matcher_type} matcher")
+            elif matcher_type == 'aerial':
+                # Create new aerial matcher
+                logger.info("🆕 Creating new aerial matcher")
+                should_cleanup_matcher = True
+                
                 # DEBUG: Check coordinate transformations BEFORE ROMA
-                from services.coordinate_transformation_service import CoordinateTransformationService
                 coord_service_before = CoordinateTransformationService()
                 logger.info(f"DEBUG: Coordinate transformations available BEFORE ROMA: {coord_service_before.is_available()}")
                 
@@ -106,29 +117,43 @@ class FeatureMatchingService:
                 else:
                     logger.error("❌ ROMA matcher initialization failed")
                     return FeatureMatchingResult(success=False, error_message="ROMA matcher not available for aerial imagery")
-                
-                kp1, kp2, matches, detector_name = matcher.roma_match_both_images(source_img, destination_img)
-                
-                # DEBUG: Check coordinate transformations AFTER ROMA
-                coord_service_after = CoordinateTransformationService()
-                logger.info(f"DEBUG: Coordinate transformations available AFTER ROMA: {coord_service_after.is_available()}")
-                
-                # DEBUG: Test actual transformation
-                try:
-                    test_lat, test_lon = coord_service_after.rd_to_latlon(155000, 463000)
-                    logger.info(f"DEBUG: Test transformation successful: RD(155000,463000) -> WGS84({test_lat:.6f},{test_lon:.6f})")
-                except Exception as e:
-                    logger.error(f"DEBUG: Test transformation FAILED after ROMA: {e}")
             else:
+                # Create new schematic matcher
+                logger.info("🆕 Creating new schematic matcher")
+                should_cleanup_matcher = True
                 matcher = SchematicMapMatcher()
-                # Traditional feature detection and matching
-                kp1, desc1, detector1 = matcher.detect_and_compute_multi(source_img)
-                kp2, desc2, detector2 = matcher.detect_and_compute_multi(destination_img)
-                
-                if desc1 is None or desc2 is None:
-                    return FeatureMatchingResult(success=False, error_message="Feature detection failed")
-                
-                matches = matcher.match_features_adaptive(desc1, desc2, detector1, detector2)
+
+            # Perform matching based on matcher type
+            try:
+                if matcher_type == 'aerial':
+                    kp1, kp2, matches, detector_name = matcher.roma_match_both_images(source_img, destination_img)
+                    
+                    # DEBUG: Check coordinate transformations AFTER ROMA
+                    coord_service_after = CoordinateTransformationService()
+                    logger.info(f"DEBUG: Coordinate transformations available AFTER ROMA: {coord_service_after.is_available()}")
+                    
+                    # DEBUG: Test actual transformation
+                    try:
+                        test_lat, test_lon = coord_service_after.rd_to_latlon(155000, 463000)
+                        logger.info(f"DEBUG: Test transformation successful: RD(155000,463000) -> WGS84({test_lat:.6f},{test_lon:.6f})")
+                    except Exception as e:
+                        logger.error(f"DEBUG: Test transformation FAILED after ROMA: {e}")
+                        
+                else:
+                    # Traditional feature detection and matching
+                    kp1, desc1, detector1 = matcher.detect_and_compute_multi(source_img)
+                    kp2, desc2, detector2 = matcher.detect_and_compute_multi(destination_img)
+                    
+                    if desc1 is None or desc2 is None:
+                        return FeatureMatchingResult(success=False, error_message="Feature detection failed")
+                    
+                    matches = matcher.match_features_adaptive(desc1, desc2, detector1, detector2)
+                        
+            finally:
+                # Only cleanup if we created the matcher (not if it was reused)
+                if should_cleanup_matcher and matcher_type == 'aerial':
+                    matcher.cleanup()
+                    logger.info("🧹 Aerial matcher cleaned up after use")
             
             if len(matches) < 10:  # Use base matcher's min count
                 return FeatureMatchingResult(success=False, error_message=f"Insufficient matches: {len(matches)}")
@@ -250,7 +275,8 @@ class FeatureMatchingService:
         destination_image_path: str,
         output_dir: str,
         overlay_transparency: float = 0.6,
-        map_type: Optional[str] = None
+        map_type: Optional[str] = None,
+        reuse_matcher: Optional[object] = None
     ) -> Dict[str, Any]:
         """
         Perform feature matching between two images
@@ -273,7 +299,8 @@ class FeatureMatchingService:
             destination_image_path=destination_image_path,
             output_dir=output_dir,
             overlay_transparency=overlay_transparency,
-            map_type=map_type
+            map_type=map_type,
+            reuse_matcher=reuse_matcher
         )
         
         if not result.success:
@@ -323,6 +350,23 @@ class FeatureMatchingService:
         """
         logger.info(f"Testing buffer sizes: {test_buffer_sizes}")
         
+        # Create matcher once for reuse across all buffer tests (performance optimization)
+        matcher_type = self.select_matcher_for_map_type(map_type)
+        reusable_matcher = None
+        
+        if matcher_type == 'aerial':
+            logger.info("🚀 Creating reusable ROMA matcher for all buffer tests")
+            reusable_matcher = AerialImageryMatcher()
+            if not reusable_matcher.roma_available:
+                logger.error("❌ ROMA matcher initialization failed")
+                return {
+                    "success": False,
+                    "error_message": "ROMA matcher not available for aerial imagery"
+                }
+        elif matcher_type == 'schematic':
+            logger.info("🚀 Creating reusable schematic matcher for all buffer tests")
+            reusable_matcher = SchematicMapMatcher()
+        
         best_result = None
         best_buffer = None
         best_inlier_count = 0
@@ -352,13 +396,14 @@ class FeatureMatchingService:
                         logger.warning(f"Map cutting failed for {buffer_meters}m {test_map_type} buffer: {cut_result['error_message']}")
                         continue
                     
-                    # Perform feature matching
+                    # Perform feature matching with reusable matcher
                     match_result = self.perform_feature_matching(
                         source_image_path=source_image_path,
                         destination_image_path=cut_result["destination_path"],
                         output_dir=buffer_test_dir,
                         overlay_transparency=overlay_transparency,
-                        map_type=test_map_type
+                        map_type=test_map_type,
+                        reuse_matcher=reusable_matcher
                     )
                     
                     if match_result["success"]:
@@ -390,6 +435,14 @@ class FeatureMatchingService:
                 except Exception as e:
                     logger.warning(f"Error testing {buffer_meters}m {test_map_type} buffer: {str(e)}")
                     continue
+        
+        # Cleanup the reusable matcher after all buffer tests
+        try:
+            if reusable_matcher is not None and matcher_type == 'aerial':
+                reusable_matcher.cleanup()
+                logger.info("🧹 Reusable ROMA matcher cleaned up after all buffer tests")
+        except Exception as e:
+            logger.warning(f"⚠️ Error cleaning up reusable matcher: {e}")
         
         if best_result is None:
             return {

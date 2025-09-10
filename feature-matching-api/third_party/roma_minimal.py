@@ -385,7 +385,8 @@ class RomaMatcher(nn.Module):
 
         print(f"ROMA SUCCESS result: {len(kpts0_filtered)} matches at original scale")
 
-        # Memory cleanup
+        # Aggressive memory cleanup after inference
+        del warp, certainty, matches, kpts1, kpts2  # Clear intermediate tensors
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         gc.collect()
@@ -393,7 +394,7 @@ class RomaMatcher(nn.Module):
         # Log memory usage after inference
         process = psutil.Process()
         memory_mb = process.memory_info().rss / 1024 / 1024
-        logger.info(f"Memory usage after inference: {memory_mb:.1f} MB")
+        logger.info(f"Memory usage after inference and cleanup: {memory_mb:.1f} MB")
         
         return {
             "keypoints0": kpts0_filtered,
@@ -401,6 +402,27 @@ class RomaMatcher(nn.Module):
             "confidence": conf_filtered,
             "inlier_ratio": inlier_ratio
         }
+    
+    def cleanup(self):
+        """Clean up model and free memory."""
+        try:
+            if hasattr(self, 'net') and self.net is not None:
+                # Move model to CPU and clear
+                self.net = self.net.cpu()
+                del self.net
+                
+            # Clear all cached data
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            gc.collect()
+            
+            logger.info("🧹 ROMA model cleaned up successfully")
+        except Exception as e:
+            logger.warning(f"⚠️ Error during ROMA model cleanup: {e}")
+    
+    def __del__(self):
+        """Ensure cleanup when object is destroyed."""
+        self.cleanup()
 
 if __name__ == "__main__":
     # Simple usage example
