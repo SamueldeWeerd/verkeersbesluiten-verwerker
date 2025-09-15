@@ -44,7 +44,7 @@ async def trigger_n8n_workflow(
     ), 
     exclude_keywords: Optional[str] = Query(
         None, 
-        description="Exclude keywords from the search. Use comma-separated values: 'parkeerplaats,laadpaal' or 'parkeerplaats, laadpaal'"
+        description="Exclude keywords from the search. Use comma-separated values: 'parkeerplaats,laadpaal'. The more relevant keywords are excluded, the faster the model will work. Advice is to use at least parkeerplaats, laadpaal, parkeerverbod, parkeervergunning, parkeerregime, parkeermogelijkheden, parkeervoorzieningen, parkeersituatie, parkeersituaties, parkeerplaatsen, parkeerplaatsvoorzieningen."
     )
 ):
     """

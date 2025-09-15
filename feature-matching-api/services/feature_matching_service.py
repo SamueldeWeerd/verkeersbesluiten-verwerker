@@ -13,6 +13,7 @@ from services.image_processing_service import ImageProcessingService
 from services.georeferencing_service import GeoreferencingService
 from services.visualization_service import VisualizationService
 from utils.memory_utils import MemoryManager
+from utils.cleanup_utils import SessionCleanupManager
 from memory_config import config
 from models.response_models import FeatureMatchingResult
 from matchers import BaseFeatureMatcher, SchematicMapMatcher, AerialImageryMatcher
@@ -28,6 +29,11 @@ class FeatureMatchingService:
         self.georeferencing_service = GeoreferencingService()
         self.visualization_service = VisualizationService()
         self.memory_manager = MemoryManager()
+        self.session_cleanup_manager = SessionCleanupManager(
+            max_age_hours=48,  # Keep sessions for 48 hours
+            max_sessions=50,   # Maximum 50 sessions
+            max_size_gb=10     # Maximum 10GB of session data
+        )
         
         # Log configuration on first initialization
         if not hasattr(FeatureMatchingService, '_config_logged'):
@@ -451,6 +457,14 @@ class FeatureMatchingService:
             }
         
         logger.info(f"\n🎯 Selected best buffer: {best_buffer}m with {best_inlier_count} inliers")
+        
+        # Automatic session cleanup to prevent disk space issues
+        try:
+            cleanup_result = self.session_cleanup_manager.cleanup_old_sessions()
+            if cleanup_result["success"] and cleanup_result["sessions_removed"] > 0:
+                logger.info(f"🧹 Automatic cleanup: Removed {cleanup_result['sessions_removed']} old sessions, freed {cleanup_result['size_freed_gb']}GB")
+        except Exception as e:
+            logger.warning(f"⚠️ Automatic session cleanup failed: {e}")
         
         return {
             "success": True,

@@ -23,6 +23,13 @@ services:
     volumes:
       - ./afbeeldingen:/app/afbeeldingen
     restart: unless-stopped
+    # Memory limits to prevent OOM
+    # deploy:
+    #   resources:
+    #     limits:
+    #       memory: 2G
+    #     reservations:
+    #       memory: 512M
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--quiet", "-O", "/dev/null", "http://localhost:8000/health"]
       interval: 30s

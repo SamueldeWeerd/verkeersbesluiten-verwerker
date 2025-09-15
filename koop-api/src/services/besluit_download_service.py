@@ -11,6 +11,7 @@ from src.utils.http_client import RateLimitedClient
 from src.utils.xml_parser import XMLParser
 from src.ml.clip_classifier import ImageClassifier
 from src.utils.filters import BordcodeCategory, check_bordcode_filter, check_province_filter, check_gemeente_filter, validate_provinces
+from src.utils.cleanup_utils import CleanupManager
 
 class BesluitService:
     """
@@ -33,6 +34,11 @@ class BesluitService:
         self._http_client = http_client or RateLimitedClient(settings=self._settings)
         self._xml_parser = xml_parser or XMLParser()
         self._image_classifier = image_classifier or ImageClassifier(settings=self._settings)
+        self._cleanup_manager = CleanupManager(
+            max_age_hours=24,  # Keep images for 24 hours
+            max_files=500,     # Maximum 500 images
+            max_size_mb=1000   # Maximum 1GB of images
+        )
     
     def get_besluiten_for_date(
         self, 
@@ -224,6 +230,15 @@ class BesluitService:
                 logging.info(f"📝 {besluit_id}: Completed processing (no images)")
         
         logging.info(f"🏁 Finished processing {len(all_besluiten)}/{total_records} verkeersbesluit records")
+        
+        # Automatic cleanup to prevent memory/disk issues
+        try:
+            cleanup_result = self._cleanup_manager.cleanup_old_files("afbeeldingen", "*.png")
+            if cleanup_result["success"] and cleanup_result["files_removed"] > 0:
+                logging.info(f"🧹 Automatic cleanup: Removed {cleanup_result['files_removed']} old images, freed {cleanup_result['size_freed_mb']}MB")
+        except Exception as e:
+            logging.warning(f"⚠️ Automatic cleanup failed: {e}")
+        
         return all_besluiten
     
     def _download_and_save_pdf_attachment(self, pdf_url: str, exb_code: str, besluit_id: str) -> str:
