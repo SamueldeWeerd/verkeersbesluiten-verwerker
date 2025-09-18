@@ -25,7 +25,7 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
       "typeVersion": 1,
       "position": [
-        512,
+        720,
         864
       ],
       "id": "dc21339f-3df3-4751-b31b-26d0c695890c",
@@ -53,7 +53,8 @@
       "id": "b7eb9aeb-cffb-47bb-963d-a391c15fc58d",
       "name": "HTTP Request",
       "retryOnFail": true,
-      "alwaysOutputData": true
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
     },
     {
       "parameters": {
@@ -62,7 +63,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        32,
+        240,
         672
       ],
       "id": "62d9855f-c4f4-4935-b96b-a7c8a1cbf8c0",
@@ -83,7 +84,7 @@
       "type": "@n8n/n8n-nodes-langchain.informationExtractor",
       "typeVersion": 1.2,
       "position": [
-        496,
+        704,
         688
       ],
       "id": "f07b57dc-e8b9-46a5-a6df-51d6888355f8",
@@ -127,7 +128,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        3600,
+        3808,
         128
       ],
       "id": "75be8ed2-b924-48d0-bf21-b689b0f2509c",
@@ -183,7 +184,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3136,
+        3344,
         240
       ],
       "id": "a815a640-bed0-430e-b28a-5e24460485e0",
@@ -216,7 +217,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1920,
+        2128,
         544
       ],
       "id": "2a3398e2-c621-4d90-8794-2f4f62c8dc62",
@@ -229,7 +230,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2880,
+        3088,
         192
       ],
       "id": "f60301bd-55e2-49c6-a67a-c8e3ea945a36",
@@ -263,7 +264,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1648,
+        1856,
         672
       ],
       "id": "5d14505f-02c3-4a73-9bf0-208287961f04",
@@ -328,7 +329,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1408,
+        1616,
         672
       ],
       "id": "427b32fe-e86c-437a-9c5e-063f4abaf312",
@@ -417,7 +418,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1008,
+        1216,
         160
       ],
       "id": "950cbece-dfb0-43e0-b59b-a084ac8b1cbd",
@@ -431,7 +432,7 @@
       "type": "n8n-nodes-base.convertToFile",
       "typeVersion": 1.1,
       "position": [
-        208,
+        416,
         0
       ],
       "id": "2621ae6f-f0c4-490b-9c32-1f9e108aca74",
@@ -448,7 +449,7 @@
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1840,
+        2048,
         160
       ],
       "id": "db5c8565-4598-415f-ae42-28e5639303ba",
@@ -467,7 +468,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        752,
+        960,
         160
       ],
       "id": "c24a789d-2d96-4e2f-9d73-5f3af1600265",
@@ -481,7 +482,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2080,
+        2288,
         0
       ],
       "id": "8766d5eb-0bcd-4cdf-ad58-7ad8ecb97a54",
@@ -504,7 +505,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        2736,
+        2944,
         0
       ],
       "id": "dbdfb9e3-8481-4412-a6b8-c69306461149",
@@ -534,7 +535,7 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 1.8,
       "position": [
-        2528,
+        2736,
         208
       ],
       "id": "f9146dd0-0585-42e7-b97b-9a32179a04c4",
@@ -550,13 +551,13 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "CREATE EXTENSION IF NOT EXISTS postgis;\n\nCREATE SCHEMA IF NOT EXISTS verkeersbesluiten;\n\nDO $$\nBEGIN\n    IF NOT EXISTS (\n        SELECT FROM information_schema.tables \n        WHERE  table_schema = 'verkeersbesluiten'\n        AND    table_name   = 'verkeersai'\n    ) THEN\n        EXECUTE $stmt$\n            CREATE TABLE verkeersbesluiten.verkeersai (\n                id text PRIMARY KEY,\n                gemeente text,\n                titel text,\n                bordcode text,\n                samenvatting text,\n                ai_samenvatting text,\n                available date,\n                original_image text,\n                georeferenced_image text,\n                geom_multipolygon geometry(MULTIPOLYGON),\n                geom_multilinestring geometry(MULTILINESTRING),\n                geom_multipoint geometry(MULTIPOINT, 28992)\n            );\n        $stmt$;\n\n        -- Create indexes\n        EXECUTE 'CREATE INDEX idx_geom_multilinestring ON verkeersbesluiten.verkeersai USING gist (geom_multilinestring)';\n        EXECUTE 'CREATE INDEX idx_geom_multipoint ON verkeersbesluiten.verkeersai USING gist (geom_multipoint)';\n        EXECUTE 'CREATE INDEX idx_geom_multipolygon ON verkeersbesluiten.verkeersai USING gist (geom_multipolygon)';\n    END IF;\nEND\n$$;",
+        "query": "CREATE EXTENSION IF NOT EXISTS postgis;\nCREATE SCHEMA IF NOT EXISTS verwerkte_verkeersbesluiten;\n\nCREATE TABLE IF NOT EXISTS verwerkte_verkeersbesluiten.verkeersbesluiten_snelheid_mei (\n  id                   text PRIMARY KEY,\n  gemeente             text,\n  titel                text,\n  bordcode             text,\n  samenvatting         text,\n  ai_samenvatting      text,\n  available            date,\n  original_image       text,\n  georeferenced_image  text,\n  geom_multipolygon    geometry(MULTIPOLYGON, 28992),\n  geom_multilinestring geometry(MULTILINESTRING, 28992),\n  geom_multipoint      geometry(MULTIPOINT, 28992)\n);\n\nCREATE INDEX IF NOT EXISTS idx_geom_multilinestring\n  ON verwerkte_verkeersbesluiten.verkeersbesluiten_snelheid_mei USING gist (geom_multilinestring);\nCREATE INDEX IF NOT EXISTS idx_geom_multipoint\n  ON verwerkte_verkeersbesluiten.verkeersbesluiten_snelheid_mei USING gist (geom_multipoint);\nCREATE INDEX IF NOT EXISTS idx_geom_multipolygon\n  ON verwerkte_verkeersbesluiten.verkeersbesluiten_snelheid_mei USING gist (geom_multipolygon);\n\n",
         "options": {}
       },
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2.6,
       "position": [
-        1232,
+        1440,
         160
       ],
       "id": "c454916e-3e62-48be-9c23-4604504573e6",
@@ -660,7 +661,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4704,
+        4912,
         304
       ],
       "id": "3d2e9c4f-6ca6-4f60-b931-5faf87eb922c",
@@ -758,7 +759,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        2400,
+        2608,
         688
       ],
       "id": "5718d64e-ad30-47f9-bdc1-ba866189a4cc",
@@ -841,7 +842,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        3408,
+        3616,
         272
       ],
       "id": "77642e7e-6ea3-4b4a-a8b1-2eab467f42dd",
@@ -885,7 +886,7 @@
       "type": "n8n-nodes-base.editImage",
       "typeVersion": 1,
       "position": [
-        2304,
+        2512,
         0
       ],
       "id": "3dd760bb-0ee7-4f71-ac3f-be39807a680c",
@@ -929,7 +930,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -448,
+        -192,
         672
       ],
       "id": "3cd44d23-3357-4c54-8b6e-437b551d98f7",
@@ -1012,7 +1013,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        4176,
+        4384,
         272
       ],
       "id": "062f0863-d132-487a-afe2-957d5df07b79",
@@ -1046,7 +1047,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3968,
+        4176,
         128
       ],
       "id": "795a20c6-e7ee-4742-b515-8f95edb2474c",
@@ -1060,7 +1061,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1056,
+        1264,
         688
       ],
       "id": "3b3700df-c9a2-4633-beaa-145c278461b1",
@@ -1073,11 +1074,45 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1440,
+        1648,
         160
       ],
       "id": "cdacf82a-4d83-4731-a65d-8cd69b7c98c6",
       "name": "Code2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ea3ab604-f0fb-460e-9b09-b536009eea89",
+              "leftValue": "={{$json[\"error\"]}}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -464,
+        672
+      ],
+      "id": "18d20a19-2495-481f-8d62-3699821839fe",
+      "name": "If there's an error"
     }
   ],
   "pinData": {},
@@ -1097,7 +1132,7 @@
       "main": [
         [
           {
-            "node": "if valid traffic decrees found on that day",
+            "node": "If there's an error",
             "type": "main",
             "index": 0
           }
@@ -1465,13 +1500,31 @@
           }
         ]
       ]
+    },
+    "If there's an error": {
+      "main": [
+        [
+          {
+            "node": "Loop over days",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "if valid traffic decrees found on that day",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "3f4b65ce-a08a-4889-9eb0-0ac2b4a0308b",
+  "versionId": "72a4f7ce-27a0-4761-8dd9-55fe5c3a9f1b",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "a9d02d9b0c9e604499c5147fc41df20659f54738f244aa5a68749076aa0f1364"
